@@ -9,6 +9,8 @@ interface NeonProject {
   region_id?: string
   pg_version?: number
   org_id?: string
+  created_at?: string
+  updated_at?: string
 }
 
 interface NeonProjects {
@@ -67,10 +69,17 @@ export async function listProjects(keys: string[]): Promise<CloudProject[]> {
         detail: [project.region_id, project.pg_version ? `PG ${project.pg_version}` : undefined]
           .filter(Boolean)
           .join(' · '),
+        ...(project.created_at ? { createdAt: project.created_at } : {}),
       })
     }
   }
-  return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name, undefined))
+  // Newest first: a fresh project is the one being looked for; the name only breaks ties.
+  return [...byId.values()].sort((a, b) => {
+    if (a.createdAt && b.createdAt && a.createdAt !== b.createdAt) {
+      return a.createdAt < b.createdAt ? 1 : -1
+    }
+    return a.name.localeCompare(b.name, undefined)
+  })
 }
 
 interface NeonBranch {

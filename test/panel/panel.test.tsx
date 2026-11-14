@@ -393,8 +393,8 @@ describe('provider tabs', () => {
 
     const accounts = p.find({ label: 'Cuenta' })
     expect(accounts?.props.options).toEqual([
-      { value: 'k1', label: 'yuniorglez-projects · napi_ab…f456' },
-      { value: 'k2', label: 'yunior@squaads.com · napi_cd…e789' },
+      { value: 'k1', label: 'yuniorglez-projects' },
+      { value: 'k2', label: 'yunior@squaads.com' },
     ])
 
     await p.select({ label: 'Cuenta' }, 'k2')

@@ -9,6 +9,7 @@ interface SupabaseProject {
   name?: string
   region?: string
   status?: string
+  created_at?: string
   database?: { version?: string }
 }
 
@@ -42,10 +43,17 @@ export async function listProjects(tokens: string[]): Promise<CloudProject[]> {
         detail: [project.region, project.status?.toLowerCase(), project.database?.version]
           .filter(Boolean)
           .join(' · '),
+        ...(project.created_at ? { createdAt: project.created_at } : {}),
       })
     }
   }
-  return [...byRef.values()].sort((a, b) => a.name.localeCompare(b.name, undefined))
+  // Newest first, like Neon: the project just created is the one being looked for.
+  return [...byRef.values()].sort((a, b) => {
+    if (a.createdAt && b.createdAt && a.createdAt !== b.createdAt) {
+      return a.createdAt < b.createdAt ? 1 : -1
+    }
+    return a.name.localeCompare(b.name, undefined)
+  })
 }
 
 interface SupabaseOrganization {

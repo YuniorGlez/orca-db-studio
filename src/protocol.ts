@@ -151,6 +151,8 @@ export interface CloudProject {
   name: string
   /** Region, engine version and whatever else tells it apart, in one line. */
   detail: string
+  /** When it was created, ISO; the panel lists the newest first. */
+  createdAt?: string
 }
 
 /** A database inside a cloud project, with the branch it lives on. */

@@ -3,7 +3,7 @@
   "manifestVersion": 2,
   "id": "db-studio",
   "name": "DB Studio",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "Explora y consulta PostgreSQL, MySQL/MariaDB y SQLite desde Orca. Lee el .env de cada worktree y abre bases de Neon y Supabase con un token.",
   "author": {
     "name": "Oscar Botteri",

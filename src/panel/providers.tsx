@@ -40,6 +40,27 @@ const COPY: Record<Provider, ProviderCopy> = {
   },
 }
 
+/**
+ * What the selector calls an account: its name, and the masked token only when that name is the
+ * mask itself (the API could not say which account it was).
+ */
+function accountLabel(key: { label: string; masked: string }): string {
+  return key.label === key.masked ? key.masked : key.label
+}
+
+/** The date a project was created, short: `12 nov`, with the year only when it is not this one. */
+function shortDate(iso: string | undefined): string {
+  if (!iso) return ''
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  const sameYear = date.getFullYear() === new Date().getFullYear()
+  return new Intl.DateTimeFormat('es-ES', {
+    day: 'numeric',
+    month: 'short',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  }).format(date)
+}
+
 interface ProviderPanelProps {
   provider: Provider
 }
@@ -60,10 +81,7 @@ export function ProviderPanel({ provider }: ProviderPanelProps) {
         <Select
           label="Cuenta"
           value={selected ?? keys[0]?.id ?? ''}
-          options={keys.map((key) => ({
-            value: key.id,
-            label: `${key.label} · ${key.masked}`,
-          }))}
+          options={keys.map((key) => ({ value: key.id, label: accountLabel(key) }))}
           onChange={(value) => void selectAccount(provider, value)}
         />
       )}
@@ -135,7 +153,11 @@ export function ProviderPanel({ provider }: ProviderPanelProps) {
                 <Row justify="between" align="center" gap="sm">
                   <Stack gap="none">
                     <Text>{project.name}</Text>
-                    <Text muted>{project.detail || project.id}</Text>
+                    <Text muted>
+                      {[project.detail || project.id, shortDate(project.createdAt)]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </Text>
                   </Stack>
                   <Button
                     variant="ghost"

@@ -445,3 +445,27 @@ describe('a stored cloud connection', () => {
     await expect(resolveCloud(empty, 'cloud:neon:p1:neondb')).rejects.toThrow(/ya no está guardada/)
   })
 })
+
+describe('project order', () => {
+  test('lists the newest project first, whatever order the API answers in', async () => {
+    stubNetwork({
+      '/api/v2/users/me/organizations': { body: { organizations: [{ name: 'org' }] } },
+      '/api/v2/projects': {
+        body: {
+          projects: [
+            { id: 'p-old', name: 'viejo', region_id: 'r', created_at: '2026-01-02T00:00:00Z' },
+            { id: 'p-new', name: 'nuevo', region_id: 'r', created_at: '2026-11-12T00:00:00Z' },
+            { id: 'p-mid', name: 'medio', region_id: 'r', created_at: '2026-06-01T00:00:00Z' },
+          ],
+        },
+      },
+    })
+    const { w } = await start()
+
+    const view = await addKey(w, 'neon', 'napi_abc123def456')
+
+    expect(view.projects.map((p) => p.name)).toEqual(['nuevo', 'medio', 'viejo'])
+    expect(view.projects[0]?.createdAt).toBe('2026-11-12T00:00:00Z')
+    await w.deactivate()
+  })
+})
