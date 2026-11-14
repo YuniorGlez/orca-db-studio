@@ -47,3 +47,20 @@ export async function listProjects(tokens: string[]): Promise<CloudProject[]> {
   }
   return [...byRef.values()].sort((a, b) => a.name.localeCompare(b.name, undefined))
 }
+
+interface SupabaseOrganization {
+  name?: string
+  slug?: string
+}
+
+/**
+ * How the selector names the account a token belongs to. The Management API lists the token's
+ * organizations and no profile, so the first organization stands for the account.
+ */
+export async function accountLabel(token: string): Promise<string> {
+  const organizations = await get<SupabaseOrganization[]>(token, '/organizations')
+  const names = organizations.map((org) => org.name ?? org.slug).filter((n): n is string => !!n)
+  const [first = '', ...rest] = names
+  if (!first) throw new Error('Supabase no dijo a qué cuenta pertenece el token')
+  return rest.length === 0 ? first : `${first} +${rest.length}`
+}

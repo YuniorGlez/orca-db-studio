@@ -18,6 +18,12 @@ export const providerViews = atom<Record<Provider, Loadable<ProviderView>>>({
 
 export const providerBusy = atom<Provider | null>(null)
 
+/** The account each provider's selector is on; the worker's answer settles it. */
+export const providerAccount = atom<Record<Provider, string | undefined>>({
+  neon: undefined,
+  supabase: undefined,
+})
+
 function setView(provider: Provider, view: Loadable<ProviderView>): void {
   set(providerViews, { ...read(providerViews), [provider]: view })
 }
@@ -35,7 +41,10 @@ async function run(provider: Provider, request: () => Promise<ProviderView>): Pr
   if (read(providerBusy)) return
   set(providerBusy, provider)
   try {
-    setView(provider, { status: 'loaded', value: await request() })
+    const value = await request()
+    if (value.selected)
+      set(providerAccount, { ...read(providerAccount), [provider]: value.selected })
+    setView(provider, { status: 'loaded', value })
   } catch (error) {
     setView(provider, {
       status: 'error',
@@ -47,8 +56,17 @@ async function run(provider: Provider, request: () => Promise<ProviderView>): Pr
 }
 
 /** Reads the keys and the projects again; a provider without keys answers with no projects. */
-export function loadProvider(provider: Provider): Promise<void> {
-  return run(provider, () => plugin.request('provider.view', { provider }))
+/** Reads the projects of the account the selector is on (the first one when it is unset). */
+export function loadProvider(provider: Provider, keyId?: string): Promise<void> {
+  return run(provider, () =>
+    plugin.request('provider.view', { provider, ...(keyId ? { keyId } : {}) }),
+  )
+}
+
+/** Switches the selector to another stored account and lists what it reaches. */
+export function selectAccount(provider: Provider, keyId: string): Promise<void> {
+  set(providerAccount, { ...read(providerAccount), [provider]: keyId })
+  return loadProvider(provider, keyId)
 }
 
 /** Stores the token or the path that holds it, then lists what it reaches. */
@@ -65,8 +83,12 @@ export function addProviderKey(provider: Provider): Promise<void> {
   })
 }
 
+/** Forgets the account the selector is on, or every one when there is none. */
 export function clearProviderKeys(provider: Provider): Promise<void> {
-  return run(provider, () => plugin.request('provider.clearKeys', { provider }))
+  const keyId = read(providerAccount)[provider]
+  return run(provider, () =>
+    plugin.request('provider.clearKeys', { provider, ...(keyId ? { keyId } : {}) }),
+  )
 }
 
 /** The databases of each project, read when the person asks: `${provider}:${projectId}`. */
@@ -84,7 +106,12 @@ export async function loadDatabases(provider: Provider, projectId: string): Prom
   const key = databaseKey(provider, projectId)
   set(providerDatabases, { ...read(providerDatabases), [key]: { status: 'loading' } })
   try {
-    const { databases } = await plugin.request('provider.databases', { provider, projectId })
+    const keyId = read(providerAccount)[provider]
+    const { databases } = await plugin.request('provider.databases', {
+      provider,
+      projectId,
+      ...(keyId ? { keyId } : {}),
+    })
     set(providerDatabases, {
       ...read(providerDatabases),
       [key]: { status: 'loaded', value: databases },
@@ -108,7 +135,13 @@ export async function openDatabase(
   set(connectBusy, key)
   set(providerNotice, null)
   try {
-    const entry = await plugin.request('provider.connect', { provider, projectId, database })
+    const keyId = read(providerAccount)[provider]
+    const entry = await plugin.request('provider.connect', {
+      provider,
+      projectId,
+      database,
+      ...(keyId ? { keyId } : {}),
+    })
     set(providerNotice, `«${entry.name}» está en Orca Workspaces, en Bases en la nube.`)
   } catch (error) {
     set(providerNotice, error instanceof Error ? error.message : String(error))

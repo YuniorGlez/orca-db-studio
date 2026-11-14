@@ -138,3 +138,26 @@ export async function connectionUri(
     return uri
   })
 }
+
+interface NeonUser {
+  email?: string
+  name?: string
+}
+
+interface NeonOrganizations {
+  organizations?: { id?: string; name?: string }[]
+}
+
+/**
+ * How the selector names the account a token belongs to: its email when the key is personal, the
+ * organization's name when it is an organization key (those cannot read `/users/me`).
+ */
+export async function accountLabel(key: string): Promise<string> {
+  const user = await get<NeonUser>(key, '/users/me').catch(() => undefined)
+  if (user?.email) return user.email
+  const { organizations = [] } = await get<NeonOrganizations>(key, '/users/me/organizations')
+  const names = organizations.map((org) => org.name).filter((name): name is string => !!name)
+  const [first = '', ...rest] = names
+  if (!first) throw new Error('Neon no dijo a qué cuenta pertenece la key')
+  return rest.length === 0 ? first : `${first} +${rest.length}`
+}

@@ -43,16 +43,18 @@ export default function activate(orca: OrcaWorkerApi): void {
   orca.panels.handle('explorer.listObjects', ({ ref }) => registry.listObjects(ref))
   orca.panels.handle('editor.schema', ({ ref }) => registry.listColumns(ref))
   orca.panels.handle('table.open', (input) => openTable(orca, registry, input))
-  orca.panels.handle('provider.view', ({ provider }) => providerView(orca, provider))
+  orca.panels.handle('provider.view', ({ provider, keyId }) => providerView(orca, provider, keyId))
   orca.panels.handle('provider.addKey', ({ provider, value }) =>
     addProviderKey(orca, provider, value),
   )
-  orca.panels.handle('provider.clearKeys', ({ provider }) => clearProviderKeys(orca, provider))
-  orca.panels.handle('provider.databases', async ({ provider, projectId }) => ({
-    databases: await databasesOf(orca, provider, projectId),
+  orca.panels.handle('provider.clearKeys', ({ provider, keyId }) =>
+    clearProviderKeys(orca, provider, keyId),
+  )
+  orca.panels.handle('provider.databases', async ({ provider, projectId, keyId }) => ({
+    databases: await databasesOf(orca, provider, projectId, keyId),
   }))
-  orca.panels.handle('provider.connect', async ({ provider, projectId, database }) => {
-    const entry = await connectCloud(orca, provider, projectId, database)
+  orca.panels.handle('provider.connect', async ({ provider, projectId, database, keyId }) => {
+    const entry = await connectCloud(orca, provider, projectId, database, keyId)
     // The panel lists connections again, so the new one shows up in its group.
     orca.panels.post('connections.changed', {})
     return entry

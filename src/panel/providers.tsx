@@ -1,5 +1,5 @@
 // The Neon and Supabase tabs: where the token goes, and what it reaches. P1, P2
-import { Button, Callout, Input, Row, read, Skeleton, Stack, Text } from 'orca'
+import { Button, Callout, Input, Row, read, Select, Skeleton, Stack, Text } from 'orca'
 import type { Provider } from '../protocol'
 import {
   addProviderKey,
@@ -8,11 +8,13 @@ import {
   loadDatabases,
   loadProvider,
   openDatabase,
+  providerAccount,
   providerBusy,
   providerDatabases,
   providerInput,
   providerNotice,
   providerViews,
+  selectAccount,
   typeProviderInput,
 } from './provider-state'
 
@@ -49,8 +51,22 @@ export function ProviderPanel({ provider }: ProviderPanelProps) {
   const keys = view.status === 'loaded' ? view.value.keys : []
   const projects = view.status === 'loaded' ? view.value.projects : []
 
+  const selected =
+    read(providerAccount)[provider] ?? (view.status === 'loaded' ? view.value.selected : undefined)
+
   return (
     <Stack gap="sm">
+      {keys.length === 0 ? null : (
+        <Select
+          label="Cuenta"
+          value={selected ?? keys[0]?.id ?? ''}
+          options={keys.map((key) => ({
+            value: key.id,
+            label: `${key.label} · ${key.masked}`,
+          }))}
+          onChange={(value) => void selectAccount(provider, value)}
+        />
+      )}
       <Text muted>{copy.hint}</Text>
       <Input
         label="Token o ruta al .env"
@@ -67,7 +83,7 @@ export function ProviderPanel({ provider }: ProviderPanelProps) {
               disabled={busy}
               onPress={() => clearProviderKeys(provider)}
             >
-              Quitar tokens
+              Quitar esta cuenta
             </Button>
             <Button disabled={busy} onPress={() => loadProvider(provider)}>
               Actualizar

@@ -135,9 +135,14 @@ export const SQLITE_FORM_REQUEST_KEY = 'sqlite-form-requested'
 /** The hosted services whose databases the plugin can reach with an API token. */
 export type Provider = 'neon' | 'supabase'
 
-/** A stored token as the panel shows it: recognisable, never the whole thing. */
+/** A stored token: what the selector calls it, and the token itself never leaves the worker. */
 export interface ProviderKey {
+  /** Stable id of the token, so the panel can name one without seeing it. */
+  id: string
+  /** Recognisable, never the whole thing. */
   masked: string
+  /** The account the token belongs to: its email when the API says it, else its organization. */
+  label: string
 }
 
 /** A project of a hosted provider, as its API lists it. */
@@ -156,11 +161,13 @@ export interface CloudDatabase {
   branch?: string
 }
 
-/** What a provider tab needs at once: its keys and the projects they reach. */
+/** What a provider tab needs at once: its accounts, the one in use, and what it reaches. */
 export interface ProviderView {
   keys: ProviderKey[]
+  /** The account whose projects are listed; unset when there is no key. */
+  selected?: string
   projects: CloudProject[]
-  /** Why the projects could not be read, when the keys were refused or the API failed. */
+  /** Why the projects could not be read, when the key was refused or the API failed. */
   error?: string
 }
 
@@ -196,7 +203,7 @@ declare module 'orca' {
     'query.cancel': { input: { documentId: string }; output: Record<string, never> }
     /** The provider's keys and the projects they reach; `refresh` skips a cached answer. */
     'provider.view': {
-      input: { provider: Provider }
+      input: { provider: Provider; keyId?: string }
       output: ProviderView
     }
     /** A token, or the path of a file that holds it; the key is stored in secrets, never storage. */
@@ -205,17 +212,17 @@ declare module 'orca' {
       output: ProviderView
     }
     'provider.clearKeys': {
-      input: { provider: Provider }
+      input: { provider: Provider; keyId?: string }
       output: ProviderView
     }
     /** The databases of one cloud project, read on demand: a provider may hold many projects. */
     'provider.databases': {
-      input: { provider: Provider; projectId: string }
+      input: { provider: Provider; projectId: string; keyId?: string }
       output: { databases: CloudDatabase[] }
     }
     /** Opens one of those databases as a connection the explorer can use. */
     'provider.connect': {
-      input: { provider: Provider; projectId: string; database: string }
+      input: { provider: Provider; projectId: string; database: string; keyId?: string }
       output: ConnectionEntry
     }
     /** The full value of a cell of the document's last result, by position. */

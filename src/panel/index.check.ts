@@ -119,7 +119,8 @@ export default defineCheck({
     requests: {
       'connections.list': ALL,
       'provider.view': {
-        keys: [{ masked: 'napi_ab…f456' }],
+        keys: [{ id: 'k1', masked: 'napi_ab…f456', label: 'yuniorglez-projects' }],
+        selected: 'k1',
         projects: [
           { id: 'p1', name: 'neurotalent', detail: 'aws-eu-central-1 · PG 17' },
           { id: 'p2', name: 'generador_propuestas', detail: 'aws-eu-central-1 · PG 16' },
@@ -132,7 +133,8 @@ export default defineCheck({
     requests: {
       'connections.list': ALL,
       'provider.view': {
-        keys: [{ masked: 'sbp_ab…c789' }],
+        keys: [{ id: 'k2', masked: 'sbp_ab…c789', label: 'squaads' }],
+        selected: 'k2',
         projects: [],
         error: 'Supabase rechazó el token (401). Revisa que sea un personal access token.',
       },

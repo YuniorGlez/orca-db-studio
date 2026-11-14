@@ -373,6 +373,35 @@ describe('provider tabs', () => {
     expect(p.find({ text: /sbp_ab…c789/ })).not.toBeNull()
   })
 
+  test('lists the stored accounts and switches between them', async () => {
+    const asked: unknown[] = []
+    const { p } = await mountWith({
+      'provider.view': (input: { provider: string; keyId?: string }) => {
+        asked.push(input)
+        return {
+          keys: [
+            { id: 'k1', masked: 'napi_ab…f456', label: 'yuniorglez-projects' },
+            { id: 'k2', masked: 'napi_cd…e789', label: 'yunior@squaads.com' },
+          ],
+          selected: input.keyId ?? 'k1',
+          projects: [],
+        }
+      },
+    })
+
+    await p.select({ label: 'Origen de las conexiones' }, 'neon')
+
+    const accounts = p.find({ label: 'Cuenta' })
+    expect(accounts?.props.options).toEqual([
+      { value: 'k1', label: 'yuniorglez-projects · napi_ab…f456' },
+      { value: 'k2', label: 'yunior@squaads.com · napi_cd…e789' },
+    ])
+
+    await p.select({ label: 'Cuenta' }, 'k2')
+
+    expect(asked.at(-1)).toEqual({ provider: 'neon', keyId: 'k2' })
+  })
+
   test('a provider with no keys explains where to get one', async () => {
     const { p } = await mountWith()
 

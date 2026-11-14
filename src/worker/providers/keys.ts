@@ -1,11 +1,16 @@
-// The API keys a hosted provider needs: read from a pasted token or from a file's .env line.
+// The API tokens a hosted provider needs: read from a pasted token or from a file's .env line,
+// and stored in secrets as a list of accounts, each with the name its selector shows. P1, P2
+import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { isAbsolute, resolve } from 'node:path'
 import type { OrcaWorkerApi } from 'orca/worker'
 import type { Provider, ProviderKey } from '../../protocol'
 
-/** Where the keys of each provider are kept; a JSON array of tokens, never in storage. */
+/** What is kept per token: the token itself, and how the panel names that account. */
+export type StoredKey = { token: string; label: string }
+
+/** Where the keys of each provider are kept; a JSON list, never in storage. */
 function secretKey(provider: Provider): string {
   return `provider:${provider}:keys`
 }
@@ -17,6 +22,11 @@ const PREFIXES: Record<Provider, string> = { neon: 'napi_', supabase: 'sbp_' }
 export function maskKey(token: string): string {
   if (token.length <= 12) return `${token.slice(0, 2)}…`
   return `${token.slice(0, 7)}…${token.slice(-4)}`
+}
+
+/** A stable id for a token, so the panel can pick one without ever holding it. */
+export function keyId(token: string): string {
+  return createHash('sha256').update(token).digest('hex').slice(0, 12)
 }
 
 function expandHome(path: string): string {
@@ -73,44 +83,88 @@ export async function resolveKeyInput(input: string, provider: Provider): Promis
   return text
 }
 
-async function readKeys(orca: OrcaWorkerApi, provider: Provider): Promise<string[]> {
+/** The stored accounts; a record saved before accounts had names is a bare token. */
+export async function readKeys(orca: OrcaWorkerApi, provider: Provider): Promise<StoredKey[]> {
   const raw = await orca.secrets.get(secretKey(provider))
   if (!raw) return []
+  let parsed: unknown
   try {
-    const parsed: unknown = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed.filter((k): k is string => typeof k === 'string') : []
+    parsed = JSON.parse(raw)
   } catch {
     return []
   }
+  if (!Array.isArray(parsed)) return []
+  const keys: StoredKey[] = []
+  for (const entry of parsed) {
+    if (typeof entry === 'string') {
+      keys.push({ token: entry, label: maskKey(entry) })
+      continue
+    }
+    if (typeof entry !== 'object' || entry === null || !('token' in entry)) continue
+    const { token, label } = entry as { token?: unknown; label?: unknown }
+    if (typeof token !== 'string') continue
+    keys.push({ token, label: typeof label === 'string' && label ? label : maskKey(token) })
+  }
+  return keys
 }
 
-async function writeKeys(orca: OrcaWorkerApi, provider: Provider, keys: string[]): Promise<void> {
+async function writeKeys(
+  orca: OrcaWorkerApi,
+  provider: Provider,
+  keys: StoredKey[],
+): Promise<void> {
   if (keys.length === 0) await orca.secrets.delete(secretKey(provider))
   else await orca.secrets.set(secretKey(provider), JSON.stringify(keys))
 }
 
+/** The accounts the panel offers in its selector. */
 export async function listKeys(orca: OrcaWorkerApi, provider: Provider): Promise<ProviderKey[]> {
-  return (await readKeys(orca, provider)).map((token) => ({ masked: maskKey(token) }))
+  return (await readKeys(orca, provider)).map(({ token, label }) => ({
+    id: keyId(token),
+    masked: maskKey(token),
+    label,
+  }))
 }
 
-/** Stores a key the person just gave; one already stored is not added twice. */
+/** The tokens to use: the one the panel picked, or every one stored when it picked none. */
+export async function tokensOf(
+  orca: OrcaWorkerApi,
+  provider: Provider,
+  id?: string,
+): Promise<string[]> {
+  const keys = await readKeys(orca, provider)
+  if (id === undefined) return keys.map((key) => key.token)
+  return keys.filter((key) => keyId(key.token) === id).map((key) => key.token)
+}
+
+/** Stores a token under the account name it answers to; the same token is not added twice. */
 export async function addKey(
   orca: OrcaWorkerApi,
   provider: Provider,
   input: string,
-): Promise<ProviderKey[]> {
+  labelOf: (token: string) => Promise<string>,
+): Promise<void> {
   const token = await resolveKeyInput(input, provider)
   const keys = await readKeys(orca, provider)
-  if (!keys.includes(token)) keys.push(token)
-  await writeKeys(orca, provider, keys)
-  return listKeys(orca, provider)
+  if (keys.some((key) => key.token === token)) return
+  const label = await labelOf(token).catch(() => '')
+  await writeKeys(orca, provider, [...keys, { token, label: label || maskKey(token) }])
 }
 
-/** Forgets every key of the provider. */
-export async function clearKeys(orca: OrcaWorkerApi, provider: Provider): Promise<void> {
-  await writeKeys(orca, provider, [])
-}
-
-export function tokensOf(orca: OrcaWorkerApi, provider: Provider): Promise<string[]> {
-  return readKeys(orca, provider)
+/** Forgets one account, or every one when no id is given. */
+export async function clearKeys(
+  orca: OrcaWorkerApi,
+  provider: Provider,
+  id?: string,
+): Promise<void> {
+  const keys = await readKeys(orca, provider)
+  if (id === undefined) {
+    await writeKeys(orca, provider, [])
+    return
+  }
+  await writeKeys(
+    orca,
+    provider,
+    keys.filter((key) => keyId(key.token) !== id),
+  )
 }
