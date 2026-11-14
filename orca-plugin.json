@@ -3,7 +3,7 @@
   "manifestVersion": 2,
   "id": "db-studio",
   "name": "DB Studio",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Explora y consulta PostgreSQL, MySQL/MariaDB y SQLite desde Orca. Lee el .env de cada worktree para ofrecer su base de datos.",
   "author": {
     "name": "Oscar Botteri",

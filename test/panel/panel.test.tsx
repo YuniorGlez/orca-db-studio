@@ -15,6 +15,7 @@ const API: ConnectionEntry = {
   name: 'api',
   detail: 'app@db:5432/shop',
   origin: 'worktree',
+  workspaceId: 'w1',
 }
 
 const SHOP_TREE: SchemaTree = {
@@ -33,15 +34,30 @@ const FOUND = {
   files: [{ path: '/work/api/app.db', relativePath: 'app.db', workspaceName: 'api' }],
 }
 
-function treeItems(p: {
-  find: (q: { role: string }) => { props: Record<string, unknown> } | null
-}) {
-  return p.find({ role: 'tree' })?.props.items as {
-    key: string
-    label: string
-    description?: string
-    icon?: string
-  }[]
+/** The group's tree that holds an item key: the list is one tree per group now. */
+function treeWith<T extends { props: Record<string, unknown> }>(
+  p: { findAll: (q: { role: string }) => T[] },
+  key: string,
+): T {
+  const tree = p
+    .findAll({ role: 'tree' })
+    .find((item) =>
+      ((item.props.items ?? []) as { key: string }[]).some((child) => child.key === key),
+    )
+  if (!tree) throw new Error(`ningún árbol tiene ${key}`)
+  return tree
+}
+
+function treeItems(p: { findAll: (q: { role: string }) => { props: Record<string, unknown> }[] }) {
+  return p.findAll({ role: 'tree' }).flatMap(
+    (tree) =>
+      (tree.props.items ?? []) as {
+        key: string
+        label: string
+        description?: string
+        icon?: string
+      }[],
+  )
 }
 
 describe('connections list', () => {
@@ -55,18 +71,64 @@ describe('connections list', () => {
     expect(p.find({ label: 'Nombre' })).not.toBeNull()
   })
 
-  test('lists saved and worktree connections in one tree, each marked with its origin', async () => {
+  test('groups the connections by where a table would open, marking the active workspace', async () => {
+    const p = await mount(panel, {
+      host: mockHost({
+        requests: {
+          'connections.list': {
+            saved: [SHOP],
+            worktrees: [
+              API,
+              { ...API, ref: 'env:DATABASE_URL:w2', name: 'web', workspaceId: 'w2' },
+            ],
+            activeWorkspaceId: 'w1',
+          },
+        },
+      }),
+    })
+
+    // One tree per group: the workspace on screen, the other workspaces, and the saved ones.
+    expect(p.findAll({ role: 'tree' })).toHaveLength(3)
+    expect(p.find({ text: 'Activo' })).not.toBeNull()
+    expect(p.find({ text: /Otras carpetas/ })).not.toBeNull()
+    expect(p.find({ text: 'Guardadas' })).not.toBeNull()
+    expect(
+      p
+        .findAll({ role: 'tree' })
+        .map((tree) => (tree.props.items as { label: string }[]).map((item) => item.label)),
+    ).toEqual([['api'], ['web'], ['shop.db']])
+  })
+
+  test('a worktree connection without a known active workspace stays in one group', async () => {
     const p = await mount(panel, {
       host: mockHost({ requests: { 'connections.list': { saved: [SHOP], worktrees: [API] } } }),
     })
 
-    expect(p.findAll({ role: 'tree' })).toHaveLength(1)
-    expect(p.find({ text: 'Worktree connections' })).toBeNull()
+    expect(p.find({ text: 'Activo' })).toBeNull()
+    expect(p.find({ text: /Carpetas abiertas en Orca/ })).not.toBeNull()
+    expect(p.findAll({ role: 'tree' })).toHaveLength(2)
+  })
+
+  test('each connection is marked with its origin', async () => {
+    const p = await mount(panel, {
+      host: mockHost({
+        requests: {
+          'connections.list': { saved: [SHOP], worktrees: [API], activeWorkspaceId: 'w1' },
+        },
+      }),
+    })
+
     expect(
-      treeItems(p).map(({ label, description, icon }) => ({ label, description, icon })),
+      p
+        .findAll({ role: 'tree' })
+        .flatMap((tree) =>
+          (tree.props.items as { label: string; description: string; icon: string }[]).map(
+            ({ label, description, icon }) => ({ label, description, icon }),
+          ),
+        ),
     ).toEqual([
+      { label: 'api', description: 'app@db:5432/shop', icon: 'branch' },
       { label: 'shop.db', description: 'data', icon: 'database' },
-      { label: 'api', description: '.env · app@db:5432/shop', icon: 'branch' },
     ])
   })
 
@@ -450,7 +512,10 @@ describe('connection form', () => {
       },
     })
 
-    await p.activateItem({ role: 'tree' }, JSON.stringify(['connection', 'c1']))
+    await p.activateItem(
+      treeWith(p, JSON.stringify(['connection', 'c1'])),
+      JSON.stringify(['connection', 'c1']),
+    )
     await p.type({ label: 'Host' }, 'db2.internal', { replace: true })
     await p.press({ text: 'Guardar' })
 
@@ -467,7 +532,10 @@ describe('connection form', () => {
       },
     })
 
-    await p.activateItem({ role: 'tree' }, JSON.stringify(['connection', 'c1']))
+    await p.activateItem(
+      treeWith(p, JSON.stringify(['connection', 'c1'])),
+      JSON.stringify(['connection', 'c1']),
+    )
     await p.press({ text: 'Eliminar' })
 
     expect(deleted).toEqual({ ref: 'c1' })
@@ -502,7 +570,10 @@ describe('connection form', () => {
       },
     })
 
-    await p.activateItem({ role: 'tree' }, JSON.stringify(['connection', 'c1']))
+    await p.activateItem(
+      treeWith(p, JSON.stringify(['connection', 'c1'])),
+      JSON.stringify(['connection', 'c1']),
+    )
 
     expect(p.find({ text: /secrets store failed/ })).not.toBeNull()
     expect(p.find({ label: 'Host' })).toBeNull()
@@ -626,10 +697,11 @@ describe('environment label', () => {
   test('a connection row starts its description with the label', async () => {
     const { p } = await mountWith()
 
+    // The worktree connection comes first: its group is the one that opens where the person looks.
     expect(treeItems(p).map((item) => item.description)).toEqual([
+      'app@db:5432/shop',
       'prod · app@db:5432/billing',
       'data',
-      '.env · app@db:5432/shop',
     ])
   })
 
@@ -707,7 +779,10 @@ describe('environment label', () => {
       },
     })
 
-    await p.activateItem({ role: 'tree' }, JSON.stringify(['connection', 'c1']))
+    await p.activateItem(
+      treeWith(p, JSON.stringify(['connection', 'c1'])),
+      JSON.stringify(['connection', 'c1']),
+    )
 
     expect(p.find({ label: 'Entorno' })?.props.value).toBe('dev')
     expect(p.find({ label: 'Color' })?.props.value).toBe('neutral')
@@ -716,7 +791,10 @@ describe('environment label', () => {
   test('a connection saved before labels existed opens with no environment', async () => {
     const { p } = await mountWith({ 'connection.get': { form: FORM, hasPassword: true } })
 
-    await p.activateItem({ role: 'tree' }, JSON.stringify(['connection', 'c1']))
+    await p.activateItem(
+      treeWith(p, JSON.stringify(['connection', 'c1'])),
+      JSON.stringify(['connection', 'c1']),
+    )
 
     expect(p.find({ label: 'Entorno' })?.props.value).toBe('none')
     expect(p.find({ label: 'Color' })?.props.disabled).toBe(true)
@@ -735,7 +813,10 @@ describe('environment label', () => {
       },
     })
 
-    await p.activateItem({ role: 'tree' }, JSON.stringify(['connection', 'c1']))
+    await p.activateItem(
+      treeWith(p, JSON.stringify(['connection', 'c1'])),
+      JSON.stringify(['connection', 'c1']),
+    )
     await p.select({ label: 'Entorno' }, 'none')
     await p.press({ text: 'Guardar' })
 

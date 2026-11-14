@@ -24,6 +24,8 @@ afterEach(async () => {
 
 interface Workspace {
   name: string
+  /** Where it lives, when the folder is not the workspace's name. */
+  folder?: string
   env?: string
   envLocal?: string
   hostId?: string
@@ -32,7 +34,8 @@ interface Workspace {
 async function start(workspaces: Workspace[], settings: Record<string, string> = {}) {
   const listed = []
   for (const w of workspaces) {
-    const path = join(root, w.name)
+    const folder = w.folder ?? w.name
+    const path = join(root, folder)
     await mkdir(path, { recursive: true })
     if (w.env !== undefined) await writeFile(join(path, '.env'), w.env)
     if (w.envLocal !== undefined) await writeFile(join(path, '.env.local'), w.envLocal)
@@ -67,6 +70,21 @@ describe('connections.list worktrees', () => {
     expect(worktrees).toHaveLength(1)
     expect(worktrees[0]).toMatchObject({ name: 'api', detail: 'app@db.local:5433/shop' })
     expect(JSON.stringify(worktrees)).not.toContain('s3cret')
+    await w.deactivate()
+  })
+
+  test('names the connection after its folder, not after the workspace or its branch', async () => {
+    const { worker: w } = await start([
+      {
+        name: 'feat/1-modo-noche',
+        folder: 'generador_propuestas',
+        env: `DATABASE_URL=${PG}\n`,
+      },
+    ])
+
+    const { worktrees } = await w.request('connections.list')
+
+    expect(worktrees[0]?.name).toBe('generador_propuestas')
     await w.deactivate()
   })
 

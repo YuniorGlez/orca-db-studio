@@ -1,5 +1,6 @@
 // One list of saved and worktree connections, and the explorer tree. C1-C4, E1
 import {
+  Badge,
   Button,
   Callout,
   EmptyState,
@@ -7,6 +8,7 @@ import {
   IconButton,
   Row,
   read,
+  Separator,
   Skeleton,
   Stack,
   Text,
@@ -133,6 +135,59 @@ function ConnectionList({ entries }: ConnectionTreeProps) {
   )
 }
 
+/**
+ * The list split by where a table would open: the workspace on screen first, so the connection
+ * whose documents land here is not buried among the rest.
+ */
+function GroupedConnections({
+  entries,
+  activeWorkspaceId,
+}: ConnectionTreeProps & {
+  activeWorkspaceId?: string
+}) {
+  const saved = entries.filter((entry) => entry.origin === 'saved')
+  const worktrees = entries.filter((entry) => entry.origin === 'worktree')
+  const here = activeWorkspaceId
+    ? worktrees.filter((entry) => entry.workspaceId === activeWorkspaceId)
+    : []
+  const elsewhere = worktrees.filter((entry) => !here.includes(entry))
+  if (entries.length === 0) return <ConnectionList entries={entries} />
+  return (
+    <Stack gap="sm">
+      {here.length === 0 ? null : (
+        <>
+          <Row gap="xs" align="center">
+            <Badge tone="accent">Activo</Badge>
+            <Text muted>{here[0]?.name}</Text>
+          </Row>
+          <ConnectionTree entries={here} />
+        </>
+      )}
+      {elsewhere.length === 0 ? null : (
+        <>
+          <Separator />
+          <Text muted>{here.length === 0 ? 'Carpetas abiertas en Orca' : 'Otras carpetas'}</Text>
+          {here.length === 0 ? null : (
+            <Text muted>
+              Al abrir una tabla de aquí, su documento se crea en esa carpeta y Orca te lleva a
+              ella.
+            </Text>
+          )}
+          <ConnectionTree entries={elsewhere} />
+        </>
+      )}
+      {saved.length === 0 ? null : (
+        <>
+          <Separator />
+          <Text muted>Guardadas</Text>
+          <ConnectionTree entries={saved} />
+        </>
+      )}
+      <Text muted>Pulsa Enter en una conexión guardada para editarla o eliminarla.</Text>
+    </Stack>
+  )
+}
+
 export function Connections() {
   const list = read(connections)
   return (
@@ -169,7 +224,10 @@ export function Connections() {
         </Callout>
       ) : null}
       {list.status === 'loaded' ? (
-        <ConnectionList entries={[...list.value.saved, ...list.value.worktrees]} />
+        <GroupedConnections
+          entries={[...list.value.saved, ...list.value.worktrees]}
+          activeWorkspaceId={list.value.activeWorkspaceId}
+        />
       ) : null}
     </Stack>
   )

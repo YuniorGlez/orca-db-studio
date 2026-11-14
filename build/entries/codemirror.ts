@@ -9,7 +9,6 @@ export {
   sql,
 } from '@codemirror/lang-sql'
 export { bracketMatching, HighlightStyle, syntaxHighlighting } from '@codemirror/language'
-export { tags } from '@lezer/highlight'
 export { Compartment, EditorState, type Extension } from '@codemirror/state'
 export {
   drawSelection,
@@ -19,3 +18,4 @@ export {
   keymap,
   lineNumbers,
 } from '@codemirror/view'
+export { tags } from '@lezer/highlight'

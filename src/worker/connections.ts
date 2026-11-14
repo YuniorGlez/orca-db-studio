@@ -10,6 +10,7 @@ import type {
   QueryResult,
   SavedConnection,
 } from '../protocol'
+import { focusedWorkspace, listLocalWorkspaces } from './local-workspaces'
 import { createQueryEngine, type RunOptions } from './query-engine'
 import {
   configOf,
@@ -110,10 +111,16 @@ export function createConnections(orca: OrcaWorkerApi): Connections {
 
   return {
     async list() {
+      const worktrees = await listWorktreeConnections(orca).catch(() => [])
+      // Which of those workspaces is on screen: the panel splits the list by it.
+      const active = await listLocalWorkspaces(orca)
+        .then((all) => focusedWorkspace(orca, all))
+        .catch(() => undefined)
       return {
         saved: await listSaved(orca),
         // Saved connections stay usable when Orca cannot list its workspaces.
-        worktrees: await listWorktreeConnections(orca).catch(() => []),
+        worktrees,
+        ...(active ? { activeWorkspaceId: active.id } : {}),
       }
     },
     async save(input) {

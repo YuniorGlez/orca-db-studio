@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import type { OrcaWorkerApi } from 'orca/worker'
 import type { OpenTableResult } from '../protocol'
 import type { Connections } from './connections'
-import { type LocalWorkspace, listLocalWorkspaces } from './local-workspaces'
+import { focusedWorkspace, type LocalWorkspace, listLocalWorkspaces } from './local-workspaces'
 import { parseWorktreeRef } from './worktree-connections'
 
 const FOLDER = '.db-studio'
@@ -16,19 +16,6 @@ export interface OpenTableInput {
   schema: string
   table: string
   workspaceId?: string
-}
-
-/** The focused workspace when it matches exactly one workspace of the list. */
-async function focusedWorkspace(
-  orca: OrcaWorkerApi,
-  workspaces: LocalWorkspace[],
-): Promise<LocalWorkspace | undefined> {
-  const context = await orca.host.call('workspace.readContext')
-  if (!context) return undefined
-  const matches = workspaces.filter(
-    (w) => w.name === context.displayName && w.branch === context.branch,
-  )
-  return matches.length === 1 ? matches[0] : undefined
 }
 
 async function targetWorkspace(

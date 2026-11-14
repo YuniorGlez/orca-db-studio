@@ -33,6 +33,8 @@ export interface ConnectionEntry {
   /** Where it points, short enough to sit beside the name. */
   detail: string
   origin: ConnectionOrigin
+  /** A worktree connection's workspace, so the panel can tell it from the one on screen. */
+  workspaceId?: string
   /** Saved connections only; a worktree connection has none. */
   label?: EnvironmentLabel
 }
@@ -40,8 +42,10 @@ export interface ConnectionEntry {
 export interface ConnectionList {
   /** Server connections and SQLite files, by name. */
   saved: ConnectionEntry[]
-  /** One per local workspace whose .env defines the connection variable; named for the workspace. */
+  /** One per local workspace whose .env defines the connection variable; named for its folder. */
   worktrees: ConnectionEntry[]
+  /** The workspace Orca is showing, when it can be told apart; its documents open there. */
+  activeWorkspaceId?: string
 }
 
 /** The server engines the connection form offers. */

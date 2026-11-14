@@ -1,7 +1,7 @@
 // Worktree connections: the connection variable read from each local workspace's .env files on
 // every use. Nothing read here is stored; the password stays in memory for the session. C4
 import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import type { OrcaWorkerApi } from 'orca/worker'
 import { parseConnectionString } from '../connection-string'
 import type { ConnectionConfig } from '../drivers'
@@ -110,9 +110,11 @@ export async function listWorktreeConnections(orca: OrcaWorkerApi): Promise<Conn
     if (!target) continue
     entries.push({
       ref: worktreeRef({ variable, workspaceId: workspace.id }),
-      name: workspace.name,
+      // The folder, not Orca's workspace name: "main" or a branch tells nobody which project it is.
+      name: basename(workspace.path) || workspace.name,
       detail: target.detail,
       origin: 'worktree',
+      workspaceId: workspace.id,
     })
   }
   return entries
