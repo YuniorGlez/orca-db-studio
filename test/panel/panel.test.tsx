@@ -518,6 +518,55 @@ describe('connection form', () => {
       input: { ref: 'c1', schema: 'public', table: 'users' },
     })
   })
+
+  test('a pasted sslmode fills the encryption field and travels to the worker', async () => {
+    let saved: unknown
+    const { p } = await mountWith({
+      'connection.save': (input: unknown) => {
+        saved = input
+        return PG
+      },
+    })
+
+    await p.press({ label: 'Nueva conexión' })
+    await p.type(
+      { label: 'Cadena de conexión' },
+      'postgresql://app:pw@ep-cool-rain.eu-central-1.aws.neon.tech/shop?sslmode=require',
+    )
+    await p.type({ label: 'Nombre' }, 'Neon')
+
+    // The field follows the URL: that is the whole point of reading the parameter.
+    expect(p.find({ label: 'Cifrado' })?.props.value).toBe('require')
+
+    await p.press({ text: 'Guardar' })
+
+    expect(saved).toMatchObject({ form: { engine: 'postgres', ssl: 'require' } })
+  })
+
+  test('a failure that names sslmode offers a fix that encrypts and retries', async () => {
+    const asked: { form: { ssl?: string } }[] = []
+    const { p } = await mountWith({
+      'connection.test': (input: { form: { ssl?: string } }) => {
+        asked.push(input)
+        // What Neon answers to a connection that arrives in the clear.
+        if (!input.form.ssl)
+          throw hostError('action_failed', 'connection is insecure (try using `sslmode=require`)')
+        return {}
+      },
+    })
+
+    await p.press({ label: 'Nueva conexión' })
+    await p.type({ label: 'Host' }, 'ep-cool-rain.eu-central-1.aws.neon.tech')
+    await p.press({ text: 'Probar' })
+
+    expect(p.find({ text: /connection is insecure/ })).not.toBeNull()
+    await p.press({ text: /^Cifrar la conexión/ })
+
+    expect(asked).toHaveLength(2)
+    expect(asked[1]).toMatchObject({ form: { ssl: 'require' } })
+    expect(p.find({ label: 'Cifrado' })?.props.value).toBe('require')
+    expect(p.find({ text: /La conexión funciona/ })).not.toBeNull()
+  })
 })
 
 describe('environment label', () => {

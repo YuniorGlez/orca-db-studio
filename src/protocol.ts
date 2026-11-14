@@ -1,5 +1,5 @@
 // Typed UI <-> worker contract, imported by both sides.
-import type { ColumnTree, SchemaTree, SqlDialect } from './drivers'
+import type { ColumnTree, SchemaTree, SqlDialect, SslMode } from './drivers'
 
 export type {
   ColumnTree,
@@ -7,6 +7,7 @@ export type {
   SchemaNode,
   SchemaTree,
   SqlDialect,
+  SslMode,
   TableColumns,
 } from './drivers'
 
@@ -54,6 +55,8 @@ export interface ServerForm {
   port: number
   database: string
   user: string
+  /** Encryption asked for; unset is the same as `disable`. */
+  ssl?: SslMode
   label?: EnvironmentLabel
 }
 

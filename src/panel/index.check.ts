@@ -42,6 +42,7 @@ const FILLED_FORM: FormDraft = {
   database: 'shop',
   user: 'app',
   path: '',
+  ssl: 'disable',
   environment: 'prod',
   tone: 'danger',
   notice: null,

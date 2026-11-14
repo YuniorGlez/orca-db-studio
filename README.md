@@ -60,6 +60,7 @@ Keep a query by moving the file out of `.db-studio/` (a folder Git ignores on it
 **Connections**
 
 - PostgreSQL, MySQL/MariaDB and SQLite, from a form or a pasted connection string (`postgres://`, `mysql://`).
+- Encrypted connections: the form's `Cifrado` field picks `disable`, `require` or `verify-full`; a pasted URL's `?sslmode=require` fills it in, and a worktree `.env` URL keeps it. A server that rejects the plain connection — Neon answers "connection is insecure (try using sslmode=require)" — shows that error with a button that turns encryption on and retries.
 - Test, edit and delete saved connections.
 - SQLite files saved as connections from the same form, picked from those found in your workspaces or pasted by path.
 - Tag a saved connection with an environment (local, dev, staging, prod). Its query documents show a colored band and a badge in the toolbar, and the panel row names it. Worktree connections cannot be tagged.

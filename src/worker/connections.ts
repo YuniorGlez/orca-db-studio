@@ -11,7 +11,6 @@ import type {
   SavedConnection,
 } from '../protocol'
 import { createQueryEngine, type RunOptions } from './query-engine'
-import { fitToBudget } from './schema-budget'
 import {
   configOf,
   deleteSaved,
@@ -21,6 +20,7 @@ import {
   passwordOf,
   saveConnection,
 } from './saved-connections'
+import { fitToBudget } from './schema-budget'
 import { listWorktreeConnections, parseWorktreeRef, resolveWorktree } from './worktree-connections'
 
 export interface Connections {

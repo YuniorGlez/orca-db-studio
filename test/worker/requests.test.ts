@@ -6,6 +6,7 @@ import { basename, join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { hostError, mockHost, mountWorker, type TestWorker } from 'orca/testing'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
+import type { ConnectionForm } from '../../src/protocol'
 import { SQLITE_FORM_REQUEST_KEY } from '../../src/protocol'
 import * as worker from '../../src/worker/index'
 
@@ -728,6 +729,36 @@ describe('connection.save', () => {
     expect(w.posts).toContainEqual({ event: 'connections.changed', payload: {} })
     expect(JSON.stringify(host.data().storage)).not.toContain('s3cret-pw')
     expect(Object.values(host.data().secrets)).toEqual(['s3cret-pw'])
+  })
+})
+
+describe('connection encryption', () => {
+  test('keeps the mode the form asked for', async () => {
+    const host = mockHost()
+    const w = await mountWorker(worker, { host })
+
+    const { ref } = await w.request('connection.save', { form: { ...PG_FORM, ssl: 'require' } })
+
+    expect((await w.request('connection.get', { ref })).form).toEqual({
+      ...PG_FORM,
+      ssl: 'require',
+    })
+    await w.deactivate()
+  })
+
+  test('writes "disable" as nothing at all and refuses a mode it does not know', async () => {
+    const host = mockHost()
+    const w = await mountWorker(worker, { host })
+
+    const { ref } = await w.request('connection.save', { form: { ...PG_FORM, ssl: 'disable' } })
+    expect((await w.request('connection.get', { ref })).form).toEqual(PG_FORM)
+
+    await expect(
+      w.request('connection.save', {
+        form: { ...PG_FORM, ssl: 'prefer' } as unknown as ConnectionForm,
+      }),
+    ).rejects.toThrow(/cifrado/i)
+    await w.deactivate()
   })
 })
 
