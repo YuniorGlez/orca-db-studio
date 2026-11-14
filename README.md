@@ -69,6 +69,7 @@ Keep a query by moving the file out of `.db-studio/` (a folder Git ignores on it
 **Explorer**
 
 - One tree for every engine: connection → database → schema → tables and views.
+- Activating a table writes its query document in the workspace that owns the connection, opens it there and takes you to that workspace, so a table of another workspace no longer looks like a click that did nothing. The document already written for that table is reused, never duplicated.
 - Clear errors when a connection fails.
 
 **Query editor**

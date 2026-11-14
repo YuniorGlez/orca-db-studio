@@ -108,6 +108,8 @@ export interface WorkspaceQuestion {
 
 export const workspaceQuestion = atom<WorkspaceQuestion | null>(null)
 export const openError = atom<string | null>(null)
+/** Said when the table's document lives in a workspace other than the one on screen. */
+export const openNotice = atom<string | null>(null)
 
 let opening = false
 
@@ -116,15 +118,23 @@ export async function openTable(table: TableRef, workspaceId?: string): Promise<
   if (opening) return
   opening = true
   set(openError, null)
+  set(openNotice, null)
   try {
     const result = await plugin.request('table.open', {
       ...table,
       ...(workspaceId === undefined ? {} : { workspaceId }),
     })
-    set(
-      workspaceQuestion,
-      result.status === 'opened' ? null : { table, workspaces: result.workspaces },
-    )
+    if (result.status === 'opened') {
+      set(workspaceQuestion, null)
+      if (result.elsewhere) {
+        set(
+          openNotice,
+          `La tabla se ha abierto en otro espacio de trabajo, «${result.workspace.name}», y Orca te ha llevado allí.`,
+        )
+      }
+    } else {
+      set(workspaceQuestion, { table, workspaces: result.workspaces })
+    }
   } catch (error) {
     set(workspaceQuestion, null)
     set(openError, errorMessage(error))

@@ -317,6 +317,33 @@ describe('opening a table', () => {
 
     expect(p.find({ text: /Abre un espacio de trabajo para abrir una tabla/ })).not.toBeNull()
   })
+
+  test('says when the table was opened in another workspace', async () => {
+    const { p } = await mountShop(() => ({
+      status: 'opened',
+      path: '.db-studio/orders.sql',
+      workspace: { id: 'w1', name: 'generador_propuestas' },
+      elsewhere: true,
+    }))
+
+    await p.activateItem(tree, ordersKey)
+
+    expect(p.find({ text: /La tabla está en otro espacio de trabajo/ })).not.toBeNull()
+    expect(p.find({ text: /generador_propuestas/ })).not.toBeNull()
+  })
+
+  test('stays quiet when the table opened where the person already was', async () => {
+    const { p } = await mountShop(() => ({
+      status: 'opened',
+      path: '.db-studio/orders.sql',
+      workspace: { id: 'w1', name: 'main' },
+      elsewhere: false,
+    }))
+
+    await p.activateItem(tree, ordersKey)
+
+    expect(p.find({ text: /La tabla está en otro espacio de trabajo/ })).toBeNull()
+  })
 })
 
 describe('connection form', () => {

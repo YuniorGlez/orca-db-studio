@@ -22,6 +22,7 @@ import {
   expanded,
   objects,
   openError,
+  openNotice,
   openTable,
   parseKey,
   schemaKey,
@@ -149,6 +150,11 @@ export function Connections() {
       {read(editError) ? (
         <Callout tone="danger" title="No se pudo abrir la conexión">
           {read(editError)}
+        </Callout>
+      ) : null}
+      {read(openNotice) ? (
+        <Callout tone="warning" title="La tabla está en otro espacio de trabajo">
+          {read(openNotice)}
         </Callout>
       ) : null}
       {read(openError) ? (

@@ -91,7 +91,14 @@ export interface WorkspaceChoice {
 }
 
 export type OpenTableResult =
-  | { status: 'opened'; path: string }
+  | {
+      status: 'opened'
+      path: string
+      /** Where the document was written, so the panel can say it. */
+      workspace: WorkspaceChoice
+      /** True when that is not the workspace on screen: the person was somewhere else. */
+      elsewhere: boolean
+    }
   | { status: 'choose-workspace'; workspaces: WorkspaceChoice[] }
 
 /** One statement's rows, cut off at the row limit when `truncated`. */
