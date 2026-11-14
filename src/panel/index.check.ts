@@ -27,9 +27,18 @@ const SHOP_DB: ConnectionEntry = {
 
 const API_WORKTREE: ConnectionEntry = {
   ref: 'env:DATABASE_URL:id-api',
-  name: 'api',
-  detail: 'app@localhost:5432/api_dev',
+  name: 'generador_propuestas',
+  detail: 'neondb_owner@ep-cool-rain.eu-central-1.aws.neon.tech:5432/neondb',
   origin: 'worktree',
+  workspaceId: 'id-api',
+}
+
+const WEB_WORKTREE: ConnectionEntry = {
+  ref: 'env:DATABASE_URL:id-web',
+  name: 'neurotalent',
+  detail: 'neondb_owner@ep-nameless-pond-pooler.c-4.eu-central-1.aws.neon.tech:5432/neondb',
+  origin: 'worktree',
+  workspaceId: 'id-web',
 }
 
 const FILLED_FORM: FormDraft = {
@@ -74,7 +83,11 @@ const FOUND_FILES = {
   ],
 }
 
-const ALL = { saved: [ANALYTICS, SHOP_DB, SHOP], worktrees: [API_WORKTREE] }
+const ALL = {
+  saved: [ANALYTICS, SHOP_DB, SHOP],
+  worktrees: [API_WORKTREE, WEB_WORKTREE],
+  activeWorkspaceId: 'id-api',
+}
 
 export default defineCheck({
   empty: {
