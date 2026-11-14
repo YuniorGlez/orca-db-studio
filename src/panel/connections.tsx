@@ -11,6 +11,8 @@ import {
   Separator,
   Skeleton,
   Stack,
+  Tab,
+  Tabs,
   Text,
   Tree,
   type TreeItem,
@@ -18,6 +20,8 @@ import {
 import { panelDescription } from '../environment-label'
 import type { ConnectionEntry, SchemaNode } from '../protocol'
 import { editError, openEditForm, openNewForm } from './connection-form-state'
+import { activeTab, openTab, type PanelTab } from './provider-state'
+import { ProviderPanel } from './providers'
 import {
   connectionKey,
   connections,
@@ -188,19 +192,11 @@ function GroupedConnections({
   )
 }
 
-export function Connections() {
+/** The connections Orca already knows: the list, its form and the notices above it. */
+function WorkspacesTab() {
   const list = read(connections)
   return (
     <Stack gap="sm">
-      <Row justify="between" align="center">
-        <Heading level={3}>Conexiones</Heading>
-        <IconButton
-          icon="add"
-          label="Nueva conexión"
-          variant="ghost"
-          onPress={() => openNewForm()}
-        />
-      </Row>
       <WorkspacePicker />
       {read(editError) ? (
         <Callout tone="danger" title="No se pudo abrir la conexión">
@@ -229,6 +225,38 @@ export function Connections() {
           activeWorkspaceId={list.value.activeWorkspaceId}
         />
       ) : null}
+    </Stack>
+  )
+}
+
+export function Connections() {
+  const tab = read(activeTab)
+  return (
+    <Stack gap="sm">
+      <Row justify="between" align="center">
+        <Heading level={3}>Conexiones</Heading>
+        <IconButton
+          icon="add"
+          label="Nueva conexión"
+          variant="ghost"
+          onPress={() => openNewForm()}
+        />
+      </Row>
+      <Tabs
+        label="Origen de las conexiones"
+        value={tab}
+        onChange={(value) => openTab(value as PanelTab)}
+      >
+        <Tab value="workspaces" label="Orca Workspaces" icon="branch">
+          <WorkspacesTab />
+        </Tab>
+        <Tab value="neon" label="Neon" icon="cloud">
+          <ProviderPanel provider="neon" />
+        </Tab>
+        <Tab value="supabase" label="Supabase" icon="cloud">
+          <ProviderPanel provider="supabase" />
+        </Tab>
+      </Tabs>
     </Stack>
   )
 }

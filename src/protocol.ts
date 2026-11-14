@@ -130,6 +130,30 @@ export const SAVED_CONNECTIONS_KEY = 'server-connections'
 /** Storage key the "Open SQLite File" command sets so the panel opens the form on SQLite. */
 export const SQLITE_FORM_REQUEST_KEY = 'sqlite-form-requested'
 
+/** The hosted services whose databases the plugin can reach with an API token. */
+export type Provider = 'neon' | 'supabase'
+
+/** A stored token as the panel shows it: recognisable, never the whole thing. */
+export interface ProviderKey {
+  masked: string
+}
+
+/** A project of a hosted provider, as its API lists it. */
+export interface CloudProject {
+  id: string
+  name: string
+  /** Region, engine version and whatever else tells it apart, in one line. */
+  detail: string
+}
+
+/** What a provider tab needs at once: its keys and the projects they reach. */
+export interface ProviderView {
+  keys: ProviderKey[]
+  projects: CloudProject[]
+  /** Why the projects could not be read, when the keys were refused or the API failed. */
+  error?: string
+}
+
 declare module 'orca' {
   interface PluginRequests {
     'connections.list': { output: ConnectionList }
@@ -160,6 +184,20 @@ declare module 'orca' {
     'query.run': { input: { ref: string; sql: string; documentId: string }; output: QueryResult }
     /** Stops the document's running query, which then rejects as cancelled. */
     'query.cancel': { input: { documentId: string }; output: Record<string, never> }
+    /** The provider's keys and the projects they reach; `refresh` skips a cached answer. */
+    'provider.view': {
+      input: { provider: Provider }
+      output: ProviderView
+    }
+    /** A token, or the path of a file that holds it; the key is stored in secrets, never storage. */
+    'provider.addKey': {
+      input: { provider: Provider; value: string }
+      output: ProviderView
+    }
+    'provider.clearKeys': {
+      input: { provider: Provider }
+      output: ProviderView
+    }
     /** The full value of a cell of the document's last result, by position. */
     'query.cell': {
       input: { documentId: string; row: number; column: number }

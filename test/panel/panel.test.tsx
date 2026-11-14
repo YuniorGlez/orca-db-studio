@@ -317,6 +317,72 @@ describe('SQLite in the connection form', () => {
   })
 })
 
+describe('provider tabs', () => {
+  const SHOP_PROJECT = { id: 'p1', name: 'shop', detail: 'aws-eu-central-1 · PG 17' }
+
+  async function mountWith(requests: Record<string, unknown> = {}) {
+    const host = mockHost({
+      requests: {
+        'connections.list': { saved: [SHOP], worktrees: [] },
+        'provider.view': { keys: [], projects: [] },
+        ...requests,
+      } as never,
+    })
+    return { host, p: await mount(panel, { host }) }
+  }
+
+  test('offers the three tabs and opens on the workspaces one', async () => {
+    const { p } = await mountWith()
+
+    expect(p.find({ role: 'tab', text: 'Orca Workspaces' })).not.toBeNull()
+    expect(p.find({ role: 'tab', text: 'Neon' })).not.toBeNull()
+    expect(p.find({ role: 'tab', text: 'Supabase' })).not.toBeNull()
+    expect(p.find({ label: 'Token o ruta al .env' })).toBeNull()
+  })
+
+  test('the Neon tab takes a token, or the path of a file that holds it', async () => {
+    const asked: unknown[] = []
+    const { p } = await mountWith({
+      'provider.addKey': (input: unknown) => {
+        asked.push(input)
+        return { keys: [{ masked: 'napi_ab…f456' }], projects: [SHOP_PROJECT] }
+      },
+    })
+
+    await p.select({ label: 'Origen de las conexiones' }, 'neon')
+    await p.type({ label: 'Token o ruta al .env' }, '/Users/dev/api/.env')
+    await p.press({ text: 'Guardar token' })
+
+    expect(asked).toEqual([{ provider: 'neon', value: '/Users/dev/api/.env' }])
+    expect(p.find({ text: /napi_ab…f456/ })).not.toBeNull()
+    expect(p.find({ text: /shop/ })).not.toBeNull()
+  })
+
+  test('says why the provider refused the token', async () => {
+    const { p } = await mountWith({
+      'provider.view': {
+        keys: [{ masked: 'sbp_ab…c789' }],
+        projects: [],
+        error: 'Supabase rechazó el token (401). Revisa que sea un personal access token.',
+      },
+    })
+
+    await p.select({ label: 'Origen de las conexiones' }, 'supabase')
+
+    expect(p.find({ text: /Supabase rechazó el token/ })).not.toBeNull()
+    expect(p.find({ text: /sbp_ab…c789/ })).not.toBeNull()
+  })
+
+  test('a provider with no keys explains where to get one', async () => {
+    const { p } = await mountWith()
+
+    await p.select({ label: 'Origen de las conexiones' }, 'neon')
+
+    expect(p.find({ text: /Sin token todavía/ })).not.toBeNull()
+    expect(p.find({ text: /Account settings/ })).not.toBeNull()
+  })
+})
+
 describe('opening a table', () => {
   const tree = { role: 'tree' }
   const connectionKey = JSON.stringify(['connection', SHOP.ref])

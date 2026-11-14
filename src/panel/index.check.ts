@@ -105,6 +105,31 @@ export default defineCheck({
     theme: 'dark',
     requests: { 'connections.list': ALL },
   },
+  'neon-tab': {
+    theme: 'dark',
+    persisted: { plugin: { 'panel-tab': 'neon' } },
+    requests: {
+      'connections.list': ALL,
+      'provider.view': {
+        keys: [{ masked: 'napi_ab…f456' }],
+        projects: [
+          { id: 'p1', name: 'neurotalent', detail: 'aws-eu-central-1 · PG 17' },
+          { id: 'p2', name: 'generador_propuestas', detail: 'aws-eu-central-1 · PG 16' },
+        ],
+      },
+    },
+  },
+  'supabase-tab-error': {
+    persisted: { plugin: { 'panel-tab': 'supabase' } },
+    requests: {
+      'connections.list': ALL,
+      'provider.view': {
+        keys: [{ masked: 'sbp_ab…c789' }],
+        projects: [],
+        error: 'Supabase rechazó el token (401). Revisa que sea un personal access token.',
+      },
+    },
+  },
   'sqlite-form': {
     storage: { [SQLITE_FORM_REQUEST_KEY]: true },
     requests: { 'connections.list': ALL, 'sqlite.findFiles': FOUND_FILES },

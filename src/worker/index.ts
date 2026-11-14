@@ -2,6 +2,7 @@ import type { OrcaWorkerApi } from 'orca/worker'
 import { SQLITE_FORM_REQUEST_KEY } from '../protocol'
 import { type Connections, createConnections } from './connections'
 import { openTable } from './documents'
+import { addProviderKey, clearProviderKeys, providerView } from './providers'
 import { RESULT_CEILING_ROWS } from './query-engine'
 import { findSqliteFiles } from './sqlite-discovery'
 
@@ -36,6 +37,11 @@ export default function activate(orca: OrcaWorkerApi): void {
   orca.panels.handle('explorer.listObjects', ({ ref }) => registry.listObjects(ref))
   orca.panels.handle('editor.schema', ({ ref }) => registry.listColumns(ref))
   orca.panels.handle('table.open', (input) => openTable(orca, registry, input))
+  orca.panels.handle('provider.view', ({ provider }) => providerView(orca, provider))
+  orca.panels.handle('provider.addKey', ({ provider, value }) =>
+    addProviderKey(orca, provider, value),
+  )
+  orca.panels.handle('provider.clearKeys', ({ provider }) => clearProviderKeys(orca, provider))
   orca.panels.handle('connection.info', async ({ ref }) => ({
     dialect: await registry.dialect(ref),
   }))

@@ -6,7 +6,6 @@ export type Loadable<T> =
   | { status: 'loading' }
   | { status: 'loaded'; value: T }
   | { status: 'error'; error: string }
-
 export const connections = atom<Loadable<ConnectionList>>({ status: 'loading' })
 
 /** Objects of each connection the person expanded, by connection ref. */
