@@ -32,7 +32,8 @@ function stubNetwork(routes: Record<string, Answer>) {
     const url = new URL(String(input))
     const key = url.pathname + (url.search || '')
     seen.push(key)
-    const answer = routes[key] ?? { status: 404, body: {} }
+    // A route may be keyed by pathname alone, or by pathname and query for the ones that matter.
+    const answer = routes[key] ?? routes[url.pathname] ?? { status: 404, body: {} }
     const status = answer.status ?? 200
     return {
       ok: status >= 200 && status < 300,
@@ -82,7 +83,7 @@ describe('provider keys', () => {
     expect(view.keys).toEqual([{ masked: 'napi_ab…f456' }])
     expect(view.projects.map((p) => p.name)).toEqual(['analytics', 'shop'])
     expect(view.projects[0]?.detail).toBe('aws-us-east-1 · PG 16')
-    expect(seen).toEqual(['/api/v2/projects'])
+    expect(seen).toEqual(['/api/v2/projects?limit=100'])
     // The token lives in secrets, never in the storage a settings backup would copy.
     expect(JSON.stringify(host.data().storage)).not.toContain('napi_abc123def456')
     expect(JSON.stringify(host.data().secrets)).toContain('napi_abc123def456')
@@ -290,5 +291,37 @@ describe('a stored cloud connection', () => {
     const empty = { secrets: { get: async () => null } } as unknown as OrcaWorkerApi
 
     await expect(resolveCloud(empty, 'cloud:neon:p1:neondb')).rejects.toThrow(/ya no está guardada/)
+  })
+})
+
+describe('neon pagination', () => {
+  test('follows the cursor until the last page, so a big account is fully listed', async () => {
+    const seen = stubNetwork({
+      '/api/v2/projects?limit=100': {
+        body: {
+          projects: [{ id: 'p1', name: 'uno', region_id: 'r', pg_version: 17 }],
+          pagination: { cursor: 'next-page' },
+        },
+      },
+      '/api/v2/projects?limit=100&cursor=next-page': {
+        body: {
+          projects: [
+            { id: 'p2', name: 'dos', region_id: 'r', pg_version: 17 },
+            { id: 'p1', name: 'uno', region_id: 'r', pg_version: 17 },
+          ],
+          pagination: { cursor: 'next-page' },
+        },
+      },
+    })
+    const { w } = await start()
+
+    const view = await addKey(w, 'neon', 'napi_abc123def456')
+
+    expect(view.projects.map((p) => p.id)).toEqual(['p2', 'p1'])
+    expect(seen).toEqual([
+      '/api/v2/projects?limit=100',
+      '/api/v2/projects?limit=100&cursor=next-page',
+    ])
+    await w.deactivate()
   })
 })

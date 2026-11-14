@@ -13,7 +13,13 @@ interface NeonProject {
 
 interface NeonProjects {
   projects?: NeonProject[]
+  /** The cursor of the next page; the API answers ten projects unless `limit` says otherwise. */
+  pagination?: { cursor?: string }
 }
+
+/** Neon pages its projects, so a big account needs a few calls; this is the most it will do. */
+const PAGE_LIMIT = 100
+const MAX_PAGES = 20
 
 async function get<T>(key: string, path: string): Promise<T> {
   let response: Response
@@ -31,12 +37,29 @@ async function get<T>(key: string, path: string): Promise<T> {
   return (await response.json()) as T
 }
 
+/** Every project one key reaches, following the API's cursor to the last page. */
+async function projectsOf(key: string): Promise<NeonProject[]> {
+  const byId = new Map<string, NeonProject>()
+  let cursor: string | undefined
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const query = new URLSearchParams({ limit: String(PAGE_LIMIT) })
+    if (cursor) query.set('cursor', cursor)
+    const body = await get<NeonProjects>(key, `/projects?${query.toString()}`)
+    const batch = body.projects ?? []
+    for (const project of batch) if (project.id) byId.set(project.id, project)
+    const next = body.pagination?.cursor
+    // The last page repeats its cursor, and an empty page means there is nothing after it.
+    if (batch.length === 0 || !next || next === cursor) break
+    cursor = next
+  }
+  return [...byId.values()]
+}
+
 /** Every project the keys reach, once each: two keys of one org list the same project. */
 export async function listProjects(keys: string[]): Promise<CloudProject[]> {
   const byId = new Map<string, CloudProject>()
   for (const key of keys) {
-    const { projects = [] } = await get<NeonProjects>(key, '/projects')
-    for (const project of projects) {
+    for (const project of await projectsOf(key)) {
       if (!project.id || byId.has(project.id)) continue
       byId.set(project.id, {
         id: project.id,
