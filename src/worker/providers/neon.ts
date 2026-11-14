@@ -1,5 +1,5 @@
 // Neon: the projects an API key can reach, through the console API. Provider P1
-import type { CloudDatabase, CloudProject } from '../../protocol'
+import type { CloudBranch, CloudDatabase, CloudProject } from '../../protocol'
 
 const BASE = 'https://console.neon.tech/api/v2'
 
@@ -77,6 +77,9 @@ interface NeonBranch {
   id?: string
   name?: string
   default?: boolean
+  primary?: boolean
+  current_state?: string
+  created_at?: string
 }
 
 interface NeonDatabase {
@@ -99,26 +102,62 @@ async function firstKeyThatAnswers<T>(
   throw last ?? new Error('No hay ninguna API key de Neon guardada')
 }
 
-/** The databases of a project, on its default branch: the branch is what holds them. */
-export async function listDatabases(keys: string[], projectId: string): Promise<CloudDatabase[]> {
+/** Where a branch stands, in one line: its state, its age, and whether it is the primary one. */
+function branchDetail(branch: NeonBranch): string {
+  const state = branch.current_state ?? ''
+  const created = branch.created_at ? branch.created_at.slice(0, 10) : ''
+  return [state, created, branch.primary ? 'primaria' : undefined]
+    .filter((part): part is string => !!part)
+    .join(' · ')
+}
+
+/** The databases one branch holds: in Neon a branch is what owns them. */
+async function databasesOfBranch(
+  key: string,
+  projectId: string,
+  branch: NeonBranch,
+): Promise<CloudDatabase[]> {
+  if (!branch.id) return []
+  const { databases = [] } = await get<{ databases?: NeonDatabase[] }>(
+    key,
+    `/projects/${encodeURIComponent(projectId)}/branches/${encodeURIComponent(branch.id)}/databases`,
+  )
+  return databases
+    .filter((database) => database.name)
+    .map((database) => ({
+      name: database.name ?? '',
+      role: database.owner_name ?? 'neondb_owner',
+      ...(branch.name ? { branch: branch.name } : {}),
+      ...(branch.id ? { branchId: branch.id } : {}),
+    }))
+}
+
+/**
+ * Every branch of a project with the databases it holds. Neon keeps a whole copy of the data per
+ * branch, so the same database name shows up on each of them and each opens its own connection.
+ */
+export async function listBranches(keys: string[], projectId: string): Promise<CloudBranch[]> {
   return firstKeyThatAnswers(keys, async (key) => {
     const { branches = [] } = await get<{ branches?: NeonBranch[] }>(
       key,
       `/projects/${encodeURIComponent(projectId)}/branches`,
     )
-    const branch = branches.find((b) => b.default) ?? branches[0]
-    if (!branch?.id) return []
-    const { databases = [] } = await get<{ databases?: NeonDatabase[] }>(
-      key,
-      `/projects/${encodeURIComponent(projectId)}/branches/${encodeURIComponent(branch.id)}/databases`,
-    )
-    return databases
-      .filter((database) => database.name)
-      .map((database) => ({
-        name: database.name ?? '',
-        role: database.owner_name ?? 'neondb_owner',
-        branch: branch.name,
-      }))
+    const ordered = [...branches].sort((a, b) => {
+      if (Boolean(a.default) !== Boolean(b.default)) return a.default ? -1 : 1
+      return (a.name ?? '').localeCompare(b.name ?? '', undefined)
+    })
+    const out: CloudBranch[] = []
+    for (const branch of ordered) {
+      if (!branch.id) continue
+      out.push({
+        id: branch.id,
+        name: branch.name ?? branch.id,
+        isDefault: branch.default === true,
+        detail: branchDetail(branch),
+        databases: await databasesOfBranch(key, projectId, branch),
+      })
+    }
+    return out
   })
 }
 
@@ -127,9 +166,11 @@ export async function connectionUri(
   keys: string[],
   projectId: string,
   database: CloudDatabase,
+  branchId?: string,
 ): Promise<string> {
   return firstKeyThatAnswers(keys, async (key) => {
     const query = new URLSearchParams({ database_name: database.name, role_name: database.role })
+    if (branchId) query.set('branch_id', branchId)
     const { uri } = await get<{ uri?: string }>(
       key,
       `/projects/${encodeURIComponent(projectId)}/connection_uri?${query.toString()}`,

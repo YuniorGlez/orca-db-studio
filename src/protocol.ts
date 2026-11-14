@@ -158,7 +158,20 @@ export interface CloudDatabase {
   name: string
   /** The role the connection uses, which the provider's API also calls the owner. */
   role: string
+  /** The branch the database was read from, and its id, which the connection needs. */
   branch?: string
+  branchId?: string
+}
+
+/** A branch of a cloud project: Neon's copy-on-write clone of the whole database. */
+export interface CloudBranch {
+  id: string
+  name: string
+  /** The branch a project opens by default; its connection is the one most people want. */
+  isDefault: boolean
+  /** Its state and age, in one line. */
+  detail: string
+  databases: CloudDatabase[]
 }
 
 /** What a provider tab needs at once: its accounts, the one in use, and what it reaches. */
@@ -218,11 +231,18 @@ declare module 'orca' {
     /** The databases of one cloud project, read on demand: a provider may hold many projects. */
     'provider.databases': {
       input: { provider: Provider; projectId: string; keyId?: string }
-      output: { databases: CloudDatabase[] }
+      output: { branches: CloudBranch[] }
     }
     /** Opens one of those databases as a connection the explorer can use. */
     'provider.connect': {
-      input: { provider: Provider; projectId: string; database: string; keyId?: string }
+      input: {
+        provider: Provider
+        projectId: string
+        database: string
+        /** The branch the database lives on; without it, the project's default branch. */
+        branchId?: string
+        keyId?: string
+      }
       output: ConnectionEntry
     }
     /** The full value of a cell of the document's last result, by position. */

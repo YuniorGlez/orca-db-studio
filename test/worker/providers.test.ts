@@ -216,19 +216,45 @@ describe('neon databases', () => {
     return { host, w, seen }
   }
 
-  test('lists the databases of a project on its default branch', async () => {
+  test('lists every branch of a project with the databases it holds', async () => {
     const { w } = await withKey({
       '/api/v2/projects': NEON_PROJECTS,
-      '/api/v2/projects/p1/branches': NEON_BRANCHES,
+      '/api/v2/projects/p1/branches': {
+        body: {
+          branches: [
+            { id: 'br-2', name: 'development', default: false, current_state: 'active' },
+            {
+              id: 'br-1',
+              name: 'main',
+              default: true,
+              primary: true,
+              current_state: 'active',
+              created_at: '2026-01-02T03:04:05Z',
+            },
+          ],
+        },
+      },
       '/api/v2/projects/p1/branches/br-1/databases': NEON_DATABASES,
+      '/api/v2/projects/p1/branches/br-2/databases': {
+        body: { databases: [{ name: 'neondb', owner_name: 'neondb_owner' }] },
+      },
     })
 
-    const { databases } = await w.request('provider.databases', {
+    const { branches } = await w.request('provider.databases', {
       provider: 'neon',
       projectId: 'p1',
     })
 
-    expect(databases).toEqual([{ name: 'neondb', role: 'neondb_owner', branch: 'main' }])
+    // The default branch comes first, whatever order the API answered in.
+    expect(branches.map((b) => [b.name, b.isDefault])).toEqual([
+      ['main', true],
+      ['development', false],
+    ])
+    expect(branches[0]?.detail).toBe('active · 2026-01-02 · primaria')
+    expect(branches[0]?.databases).toEqual([
+      { name: 'neondb', role: 'neondb_owner', branch: 'main', branchId: 'br-1' },
+    ])
+    expect(branches[1]?.databases[0]).toMatchObject({ branchId: 'br-2' })
     await w.deactivate()
   })
 
@@ -237,7 +263,8 @@ describe('neon databases', () => {
       '/api/v2/projects': NEON_PROJECTS,
       '/api/v2/projects/p1/branches': NEON_BRANCHES,
       '/api/v2/projects/p1/branches/br-1/databases': NEON_DATABASES,
-      '/api/v2/projects/p1/connection_uri?database_name=neondb&role_name=neondb_owner': NEON_URI,
+      '/api/v2/projects/p1/connection_uri?database_name=neondb&role_name=neondb_owner&branch_id=br-1':
+        NEON_URI,
     })
 
     const entry = await w.request('provider.connect', {
@@ -246,8 +273,9 @@ describe('neon databases', () => {
       database: 'neondb',
     })
 
+    // The default branch is used and named in the connection, so two branches never collide.
     expect(entry).toEqual({
-      ref: 'cloud:neon:p1:neondb',
+      ref: 'cloud:neon:p1:br-1:neondb',
       name: 'shop · neondb',
       detail: 'ep-cool-rain-pooler.eu-central-1.aws.neon.tech/neondb',
       origin: 'cloud',

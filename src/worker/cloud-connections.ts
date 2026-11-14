@@ -18,12 +18,17 @@ export type CloudRecord = {
   /** The provider's own id for the project (Neon, Supabase). */
   projectId: string
   database: string
+  /** The branch the database lives on, when the provider has them. */
+  branchId?: string
   name: string
   detail: string
 }
 
-function refOf(record: Pick<CloudRecord, 'provider' | 'projectId' | 'database'>): string {
-  return `${REF_PREFIX}${record.provider}:${encodeURIComponent(record.projectId)}:${encodeURIComponent(record.database)}`
+function refOf(
+  record: Pick<CloudRecord, 'provider' | 'projectId' | 'database'> & { branchId?: string },
+): string {
+  const branch = record.branchId ? `${encodeURIComponent(record.branchId)}:` : ''
+  return `${REF_PREFIX}${record.provider}:${encodeURIComponent(record.projectId)}:${branch}${encodeURIComponent(record.database)}`
 }
 
 function secretKey(ref: string): string {
@@ -70,7 +75,8 @@ export async function addCloud(
       !(
         item.provider === record.provider &&
         item.projectId === record.projectId &&
-        item.database === record.database
+        item.database === record.database &&
+        item.branchId === record.branchId
       ),
   )
   await orca.storage.set(REGISTRY_KEY, [...others, record])

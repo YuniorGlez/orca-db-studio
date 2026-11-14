@@ -1,5 +1,5 @@
 // The Neon and Supabase tabs: where the token goes, and what it reaches. P1, P2
-import { Button, Callout, Input, Row, read, Select, Skeleton, Stack, Text } from 'orca'
+import { Badge, Button, Callout, Input, Row, read, Select, Skeleton, Stack, Text } from 'orca'
 import type { Provider } from '../protocol'
 import {
   addProviderKey,
@@ -142,39 +142,53 @@ export function ProviderPanel({ provider }: ProviderPanelProps) {
                     size="sm"
                     onPress={() => void loadDatabases(provider, project.id)}
                   >
-                    Ver bases
+                    Ver ramas y bases
                   </Button>
                 </Row>
                 {databases?.status === 'loading' ? (
-                  <Skeleton lines={1} label={`Bases de ${project.name}`} />
+                  <Skeleton lines={1} label={`Ramas de ${project.name}`} />
                 ) : null}
                 {databases?.status === 'error' ? (
-                  <Callout tone="danger" title="No se pudieron leer las bases">
+                  <Callout tone="danger" title="No se pudieron leer las ramas">
                     {databases.error}
                   </Callout>
                 ) : null}
                 {databases?.status === 'loaded'
-                  ? databases.value.map((database) => (
-                      <Row
-                        key={`${key}:${database.name}`}
-                        justify="between"
-                        align="center"
-                        gap="sm"
-                      >
-                        <Stack gap="none">
-                          <Text>{database.name}</Text>
-                          <Text muted>
-                            {[database.role, database.branch].filter(Boolean).join(' · ')}
-                          </Text>
-                        </Stack>
-                        <Button
-                          size="sm"
-                          disabled={read(connectBusy) === key}
-                          onPress={() => void openDatabase(provider, project.id, database.name)}
-                        >
-                          Abrir
-                        </Button>
-                      </Row>
+                  ? databases.value.map((branch) => (
+                      <Stack key={`${key}:${branch.id}`} gap="xs">
+                        <Row gap="xs" align="center">
+                          <Badge tone={branch.isDefault ? 'accent' : 'neutral'}>
+                            {branch.isDefault ? 'Rama por defecto' : 'Rama'}
+                          </Badge>
+                          <Text>{branch.name}</Text>
+                        </Row>
+                        {branch.detail ? <Text muted>{branch.detail}</Text> : null}
+                        {branch.databases.length === 0 ? (
+                          <Text muted>Esta rama no tiene bases.</Text>
+                        ) : null}
+                        {branch.databases.map((database) => (
+                          <Row
+                            key={`${key}:${branch.id}:${database.name}`}
+                            justify="between"
+                            align="center"
+                            gap="sm"
+                          >
+                            <Stack gap="none">
+                              <Text>{database.name}</Text>
+                              <Text muted>{database.role}</Text>
+                            </Stack>
+                            <Button
+                              size="sm"
+                              disabled={read(connectBusy) === key}
+                              onPress={() =>
+                                void openDatabase(provider, project.id, database.name, branch.id)
+                              }
+                            >
+                              Abrir
+                            </Button>
+                          </Row>
+                        ))}
+                      </Stack>
                     ))
                   : null}
               </Stack>

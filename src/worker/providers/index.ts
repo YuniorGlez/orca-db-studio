@@ -2,7 +2,7 @@
 // P1, P2
 import type { OrcaWorkerApi } from 'orca/worker'
 import type {
-  CloudDatabase,
+  CloudBranch,
   CloudProject,
   ConnectionEntry,
   Provider,
@@ -12,7 +12,7 @@ import { addCloud } from '../cloud-connections'
 import { addKey, clearKeys, listKeys, tokensOf } from './keys'
 import {
   connectionUri,
-  listDatabases,
+  listBranches,
   listProjects as listNeon,
   accountLabel as neonLabel,
 } from './neon'
@@ -90,19 +90,19 @@ export async function clearProviderKeys(
   return view(orca, provider)
 }
 
-/** The databases of one project, read when the person asks for them. */
+/** The branches of one project with their databases, read when the person asks for them. */
 export async function databasesOf(
   orca: OrcaWorkerApi,
   provider: Provider,
   projectId: string,
   keyId?: string,
-): Promise<CloudDatabase[]> {
+): Promise<CloudBranch[]> {
   const chosen = await tokenFor(orca, provider, keyId)
   if (!chosen) throw new Error('Guarda primero un token para este proveedor')
   if (provider !== 'neon') {
     throw new Error('Para Supabase falta la contraseña de la base: se añade en el siguiente paso')
   }
-  return listDatabases([chosen.token], projectId)
+  return listBranches([chosen.token], projectId)
 }
 
 /** Opens a provider's database as a connection: the API hands over the full string. */
@@ -111,6 +111,7 @@ export async function connectCloud(
   provider: Provider,
   projectId: string,
   databaseName: string,
+  branchId?: string,
   keyId?: string,
 ): Promise<ConnectionEntry> {
   if (provider !== 'neon') {
@@ -119,19 +120,25 @@ export async function connectCloud(
   const chosen = await tokenFor(orca, provider, keyId)
   if (!chosen) throw new Error('Guarda primero un token para este proveedor')
   const tokens = [chosen.token]
-  const databases = await listDatabases(tokens, projectId)
-  const database = databases.find((candidate) => candidate.name === databaseName)
-  if (!database) throw new Error(`La base ${databaseName} ya no está en ese proyecto`)
-  const uri = await connectionUri(tokens, projectId, database)
+  const branches = await listBranches(tokens, projectId)
+  const branch = branchId
+    ? branches.find((candidate) => candidate.id === branchId)
+    : (branches.find((candidate) => candidate.isDefault) ?? branches[0])
+  const database = branch?.databases.find((candidate) => candidate.name === databaseName)
+  if (!branch || !database) throw new Error(`La base ${databaseName} ya no está en ese proyecto`)
+  const uri = await connectionUri(tokens, projectId, database, branch.id)
   const projectName = (await listNeon(tokens)).find((p) => p.id === projectId)?.name ?? projectId
   const parsed = new URL(uri.replace(/^postgres(ql)?:\/\//, 'http://'))
+  // Two branches hold a database of the same name, so the branch is part of what names it.
+  const suffix = branches.length > 1 ? ` (${branch.name})` : ''
   return addCloud(
     orca,
     {
       provider,
       projectId,
       database: database.name,
-      name: `${projectName} · ${database.name}`,
+      branchId: branch.id,
+      name: `${projectName} · ${database.name}${suffix}`,
       detail: `${parsed.host}${parsed.pathname}`,
     },
     uri,

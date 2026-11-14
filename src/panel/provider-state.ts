@@ -1,6 +1,6 @@
 // The hosted providers' tabs: their keys, the projects those keys reach, and which tab is open. P1, P2
 import { atom, plugin, read, set } from 'orca'
-import type { CloudDatabase, Provider, ProviderView } from '../protocol'
+import type { CloudBranch, Provider, ProviderView } from '../protocol'
 import type { Loadable } from './state'
 
 /** Which tab of the panel is open; `workspaces` is the connections Orca already knows. */
@@ -91,8 +91,8 @@ export function clearProviderKeys(provider: Provider): Promise<void> {
   )
 }
 
-/** The databases of each project, read when the person asks: `${provider}:${projectId}`. */
-export const providerDatabases = atom<Record<string, Loadable<CloudDatabase[]>>>({})
+/** The branches, with their databases, of each project read: `${provider}:${projectId}`. */
+export const providerDatabases = atom<Record<string, Loadable<CloudBranch[]>>>({})
 
 /** What was just opened, so the tab can say where the new connection went. */
 export const providerNotice = atom<string | null>(null)
@@ -107,14 +107,14 @@ export async function loadDatabases(provider: Provider, projectId: string): Prom
   set(providerDatabases, { ...read(providerDatabases), [key]: { status: 'loading' } })
   try {
     const keyId = read(providerAccount)[provider]
-    const { databases } = await plugin.request('provider.databases', {
+    const { branches } = await plugin.request('provider.databases', {
       provider,
       projectId,
       ...(keyId ? { keyId } : {}),
     })
     set(providerDatabases, {
       ...read(providerDatabases),
-      [key]: { status: 'loaded', value: databases },
+      [key]: { status: 'loaded', value: branches },
     })
   } catch (error) {
     set(providerDatabases, {
@@ -129,6 +129,7 @@ export async function openDatabase(
   provider: Provider,
   projectId: string,
   database: string,
+  branchId?: string,
 ): Promise<void> {
   const key = databaseKey(provider, projectId)
   if (read(connectBusy)) return
@@ -140,6 +141,7 @@ export async function openDatabase(
       provider,
       projectId,
       database,
+      ...(branchId ? { branchId } : {}),
       ...(keyId ? { keyId } : {}),
     })
     set(providerNotice, `«${entry.name}» está en Orca Workspaces, en Bases en la nube.`)

@@ -51,14 +51,17 @@ export default function activate(orca: OrcaWorkerApi): void {
     clearProviderKeys(orca, provider, keyId),
   )
   orca.panels.handle('provider.databases', async ({ provider, projectId, keyId }) => ({
-    databases: await databasesOf(orca, provider, projectId, keyId),
+    branches: await databasesOf(orca, provider, projectId, keyId),
   }))
-  orca.panels.handle('provider.connect', async ({ provider, projectId, database, keyId }) => {
-    const entry = await connectCloud(orca, provider, projectId, database, keyId)
-    // The panel lists connections again, so the new one shows up in its group.
-    orca.panels.post('connections.changed', {})
-    return entry
-  })
+  orca.panels.handle(
+    'provider.connect',
+    async ({ provider, projectId, database, branchId, keyId }) => {
+      const entry = await connectCloud(orca, provider, projectId, database, branchId, keyId)
+      // The panel lists connections again, so the new one shows up in its group.
+      orca.panels.post('connections.changed', {})
+      return entry
+    },
+  )
   orca.panels.handle('connection.info', async ({ ref }) => ({
     dialect: await registry.dialect(ref),
   }))
