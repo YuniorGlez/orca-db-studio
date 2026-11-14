@@ -95,7 +95,11 @@ describe('saving a SQLite file', () => {
     const saved = await w.request('connection.save', { form: sqliteForm(path, 'Shop') })
 
     expect(saved).toMatchObject({ name: 'Shop', detail: basename(root), origin: 'saved' })
-    expect(await w.request('connections.list')).toEqual({ saved: [saved], worktrees: [] })
+    expect(await w.request('connections.list')).toEqual({
+      saved: [saved],
+      worktrees: [],
+      cloud: [],
+    })
     expect(w.posts).toContainEqual({ event: 'connections.changed', payload: {} })
   })
 
@@ -116,7 +120,7 @@ describe('saving a SQLite file', () => {
     const w = await start()
 
     await expect(saveSqlite(w, path)).rejects.toThrow(`${path} no es una base de datos SQLite`)
-    expect(await w.request('connections.list')).toEqual({ saved: [], worktrees: [] })
+    expect(await w.request('connections.list')).toEqual({ saved: [], worktrees: [], cloud: [] })
   })
 
   test('refuses a relative path', async () => {

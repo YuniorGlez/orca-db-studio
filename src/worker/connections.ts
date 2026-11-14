@@ -10,6 +10,7 @@ import type {
   QueryResult,
   SavedConnection,
 } from '../protocol'
+import { isCloudRef, listCloud, resolveCloud } from './cloud-connections'
 import { focusedWorkspace, listLocalWorkspaces } from './local-workspaces'
 import { createQueryEngine, type RunOptions } from './query-engine'
 import {
@@ -66,6 +67,11 @@ async function targetFor(orca: OrcaWorkerApi, ref: string): Promise<Target> {
     const { config, password, url } = await resolveWorktree(orca, worktree)
     return { config, password: async () => password, stamp: url }
   }
+  // A cloud connection keeps its string in secrets: the ref is only the way to find it.
+  if (isCloudRef(ref)) {
+    const cloud = await resolveCloud(orca, ref)
+    return { config: cloud.config, password: async () => cloud.password }
+  }
   const saved = await findSaved(orca, ref)
   if (saved) return { config: saved, password: () => passwordOf(orca, ref) }
   throw new Error(`No existe la conexión ${ref}`)
@@ -120,6 +126,7 @@ export function createConnections(orca: OrcaWorkerApi): Connections {
         saved: await listSaved(orca),
         // Saved connections stay usable when Orca cannot list its workspaces.
         worktrees,
+        cloud: await listCloud(orca),
         ...(active ? { activeWorkspaceId: active.id } : {}),
       }
     },

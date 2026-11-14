@@ -150,6 +150,7 @@ function GroupedConnections({
   activeWorkspaceId?: string
 }) {
   const saved = entries.filter((entry) => entry.origin === 'saved')
+  const cloud = entries.filter((entry) => entry.origin === 'cloud')
   const worktrees = entries.filter((entry) => entry.origin === 'worktree')
   const here = activeWorkspaceId
     ? worktrees.filter((entry) => entry.workspaceId === activeWorkspaceId)
@@ -187,6 +188,13 @@ function GroupedConnections({
           <ConnectionTree entries={saved} />
         </>
       )}
+      {cloud.length === 0 ? null : (
+        <>
+          <Separator />
+          <Text muted>Bases en la nube</Text>
+          <ConnectionTree entries={cloud} />
+        </>
+      )}
       <Text muted>Pulsa Enter en una conexión guardada para editarla o eliminarla.</Text>
     </Stack>
   )
@@ -221,7 +229,7 @@ function WorkspacesTab() {
       ) : null}
       {list.status === 'loaded' ? (
         <GroupedConnections
-          entries={[...list.value.saved, ...list.value.worktrees]}
+          entries={[...list.value.saved, ...list.value.worktrees, ...(list.value.cloud ?? [])]}
           activeWorkspaceId={list.value.activeWorkspaceId}
         />
       ) : null}

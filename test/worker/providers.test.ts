@@ -3,8 +3,10 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { mockHost, mountWorker } from 'orca/testing'
+import type { OrcaWorkerApi } from 'orca/worker'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import type { Provider } from '../../src/protocol'
+import { resolveCloud } from '../../src/worker/cloud-connections'
 import * as worker from '../../src/worker/index'
 
 let root: string
@@ -181,5 +183,112 @@ describe('provider keys', () => {
     expect(view).toEqual({ keys: [], projects: [] })
     expect(seen).toEqual([])
     await w.deactivate()
+  })
+})
+
+const NEON_BRANCHES = { body: { branches: [{ id: 'br-1', name: 'main', default: true }] } }
+const NEON_DATABASES = {
+  body: { databases: [{ name: 'neondb', owner_name: 'neondb_owner' }] },
+}
+const NEON_URI = {
+  body: {
+    uri: 'postgresql://neondb_owner:s3cretpw@ep-cool-rain-pooler.eu-central-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require',
+  },
+}
+
+describe('neon databases', () => {
+  async function withKey(routes: Record<string, Answer>) {
+    const seen = stubNetwork(routes)
+    const { host, w } = await start()
+    await addKey(w, 'neon', 'napi_abc123def456')
+    return { host, w, seen }
+  }
+
+  test('lists the databases of a project on its default branch', async () => {
+    const { w } = await withKey({
+      '/api/v2/projects': NEON_PROJECTS,
+      '/api/v2/projects/p1/branches': NEON_BRANCHES,
+      '/api/v2/projects/p1/branches/br-1/databases': NEON_DATABASES,
+    })
+
+    const { databases } = await w.request('provider.databases', {
+      provider: 'neon',
+      projectId: 'p1',
+    })
+
+    expect(databases).toEqual([{ name: 'neondb', role: 'neondb_owner', branch: 'main' }])
+    await w.deactivate()
+  })
+
+  test('opening a database stores its string in secrets and lists it as a connection', async () => {
+    const { host, w } = await withKey({
+      '/api/v2/projects': NEON_PROJECTS,
+      '/api/v2/projects/p1/branches': NEON_BRANCHES,
+      '/api/v2/projects/p1/branches/br-1/databases': NEON_DATABASES,
+      '/api/v2/projects/p1/connection_uri?database_name=neondb&role_name=neondb_owner': NEON_URI,
+    })
+
+    const entry = await w.request('provider.connect', {
+      provider: 'neon',
+      projectId: 'p1',
+      database: 'neondb',
+    })
+
+    expect(entry).toEqual({
+      ref: 'cloud:neon:p1:neondb',
+      name: 'shop · neondb',
+      detail: 'ep-cool-rain-pooler.eu-central-1.aws.neon.tech/neondb',
+      origin: 'cloud',
+    })
+    const { cloud } = await w.request('connections.list')
+    expect(cloud).toHaveLength(1)
+    // The password travels in the string, which lives in secrets only.
+    expect(JSON.stringify(host.data().storage)).not.toContain('s3cretpw')
+    expect(JSON.stringify(host.data().secrets)).toContain('s3cretpw')
+    await w.deactivate()
+  })
+
+  test('supabase cannot be opened yet, and says why', async () => {
+    stubNetwork({})
+    const { w } = await start()
+    await addKey(w, 'supabase', 'sbp_token123456789')
+
+    await expect(
+      w.request('provider.connect', {
+        provider: 'supabase',
+        projectId: 'abc',
+        database: 'postgres',
+      }),
+    ).rejects.toThrow(/contraseña de la base/)
+    await w.deactivate()
+  })
+})
+
+describe('a stored cloud connection', () => {
+  const orca = {
+    secrets: {
+      get: async () =>
+        'postgresql://neondb_owner:pw@ep-cool-rain.eu-central-1.aws.neon.tech/neondb?sslmode=require',
+    },
+  } as unknown as OrcaWorkerApi
+
+  test('is parsed back into a config that keeps its sslmode and its password', async () => {
+    const cloud = await resolveCloud(orca, 'cloud:neon:p1:neondb')
+
+    expect(cloud.config).toEqual({
+      engine: 'postgres',
+      host: 'ep-cool-rain.eu-central-1.aws.neon.tech',
+      port: 5432,
+      database: 'neondb',
+      user: 'neondb_owner',
+      ssl: 'require',
+    })
+    expect(cloud.password).toBe('pw')
+  })
+
+  test('says so when the connection is no longer stored', async () => {
+    const empty = { secrets: { get: async () => null } } as unknown as OrcaWorkerApi
+
+    await expect(resolveCloud(empty, 'cloud:neon:p1:neondb')).rejects.toThrow(/ya no está guardada/)
   })
 })

@@ -12,7 +12,7 @@ export type {
 } from './drivers'
 
 /** Saved by the person in DB Studio, or read from a worktree's .env on every use. */
-export type ConnectionOrigin = 'saved' | 'worktree'
+export type ConnectionOrigin = 'saved' | 'worktree' | 'cloud'
 
 /** What a saved connection points at, for the label every query document on it shows. */
 export type Environment = 'local' | 'dev' | 'staging' | 'prod'
@@ -44,6 +44,8 @@ export interface ConnectionList {
   saved: ConnectionEntry[]
   /** One per local workspace whose .env defines the connection variable; named for its folder. */
   worktrees: ConnectionEntry[]
+  /** Databases opened from a hosted provider's tab; absent when there are none. */
+  cloud?: ConnectionEntry[]
   /** The workspace Orca is showing, when it can be told apart; its documents open there. */
   activeWorkspaceId?: string
 }
@@ -146,6 +148,14 @@ export interface CloudProject {
   detail: string
 }
 
+/** A database inside a cloud project, with the branch it lives on. */
+export interface CloudDatabase {
+  name: string
+  /** The role the connection uses, which the provider's API also calls the owner. */
+  role: string
+  branch?: string
+}
+
 /** What a provider tab needs at once: its keys and the projects they reach. */
 export interface ProviderView {
   keys: ProviderKey[]
@@ -197,6 +207,16 @@ declare module 'orca' {
     'provider.clearKeys': {
       input: { provider: Provider }
       output: ProviderView
+    }
+    /** The databases of one cloud project, read on demand: a provider may hold many projects. */
+    'provider.databases': {
+      input: { provider: Provider; projectId: string }
+      output: { databases: CloudDatabase[] }
+    }
+    /** Opens one of those databases as a connection the explorer can use. */
+    'provider.connect': {
+      input: { provider: Provider; projectId: string; database: string }
+      output: ConnectionEntry
     }
     /** The full value of a cell of the document's last result, by position. */
     'query.cell': {

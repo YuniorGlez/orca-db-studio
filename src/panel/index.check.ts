@@ -83,15 +83,23 @@ const FOUND_FILES = {
   ],
 }
 
+const NEON_CLOUD: ConnectionEntry = {
+  ref: 'cloud:neon:lucky-lab-13811214:neondb',
+  name: 'eoi-cursos',
+  detail: 'neondb_owner@ep-wild-morning-batt6fmk-pooler.c-8.eu-central-1.aws.neon.tech:5432/neondb',
+  origin: 'cloud',
+}
+
 const ALL = {
   saved: [ANALYTICS, SHOP_DB, SHOP],
   worktrees: [API_WORKTREE, WEB_WORKTREE],
+  cloud: [NEON_CLOUD],
   activeWorkspaceId: 'id-api',
 }
 
 export default defineCheck({
   empty: {
-    requests: { 'connections.list': { saved: [], worktrees: [] } },
+    requests: { 'connections.list': { saved: [], worktrees: [], cloud: [] } },
   },
   tree: {
     persisted: {

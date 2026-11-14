@@ -1,6 +1,6 @@
 // The hosted providers' tabs: their keys, the projects those keys reach, and which tab is open. P1, P2
 import { atom, plugin, read, set } from 'orca'
-import type { Provider, ProviderView } from '../protocol'
+import type { CloudDatabase, Provider, ProviderView } from '../protocol'
 import type { Loadable } from './state'
 
 /** Which tab of the panel is open; `workspaces` is the connections Orca already knows. */
@@ -67,4 +67,52 @@ export function addProviderKey(provider: Provider): Promise<void> {
 
 export function clearProviderKeys(provider: Provider): Promise<void> {
   return run(provider, () => plugin.request('provider.clearKeys', { provider }))
+}
+
+/** The databases of each project, read when the person asks: `${provider}:${projectId}`. */
+export const providerDatabases = atom<Record<string, Loadable<CloudDatabase[]>>>({})
+
+/** What was just opened, so the tab can say where the new connection went. */
+export const providerNotice = atom<string | null>(null)
+export const connectBusy = atom<string | null>(null)
+
+function databaseKey(provider: Provider, projectId: string): string {
+  return `${provider}:${projectId}`
+}
+
+export async function loadDatabases(provider: Provider, projectId: string): Promise<void> {
+  const key = databaseKey(provider, projectId)
+  set(providerDatabases, { ...read(providerDatabases), [key]: { status: 'loading' } })
+  try {
+    const { databases } = await plugin.request('provider.databases', { provider, projectId })
+    set(providerDatabases, {
+      ...read(providerDatabases),
+      [key]: { status: 'loaded', value: databases },
+    })
+  } catch (error) {
+    set(providerDatabases, {
+      ...read(providerDatabases),
+      [key]: { status: 'error', error: error instanceof Error ? error.message : String(error) },
+    })
+  }
+}
+
+/** Opens a database as a connection; the worker posts `connections.changed` so the list reloads. */
+export async function openDatabase(
+  provider: Provider,
+  projectId: string,
+  database: string,
+): Promise<void> {
+  const key = databaseKey(provider, projectId)
+  if (read(connectBusy)) return
+  set(connectBusy, key)
+  set(providerNotice, null)
+  try {
+    const entry = await plugin.request('provider.connect', { provider, projectId, database })
+    set(providerNotice, `«${entry.name}» está en Orca Workspaces, en Bases en la nube.`)
+  } catch (error) {
+    set(providerNotice, error instanceof Error ? error.message : String(error))
+  } finally {
+    set(connectBusy, null)
+  }
 }

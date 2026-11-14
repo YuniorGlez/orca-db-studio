@@ -4,9 +4,14 @@ import type { Provider } from '../protocol'
 import {
   addProviderKey,
   clearProviderKeys,
+  connectBusy,
+  loadDatabases,
   loadProvider,
+  openDatabase,
   providerBusy,
+  providerDatabases,
   providerInput,
+  providerNotice,
   providerViews,
   typeProviderInput,
 } from './provider-state'
@@ -106,14 +111,67 @@ export function ProviderPanel({ provider }: ProviderPanelProps) {
       {projects.length === 0 ? null : (
         <>
           <Text>{`${projects.length} proyecto(s) a tu alcance`}</Text>
-          {projects.map((project) => (
-            <Stack key={`${provider}:${project.id}`} gap="xs">
-              <Text>{project.name}</Text>
-              <Text muted>{project.detail || project.id}</Text>
-            </Stack>
-          ))}
+          {projects.map((project) => {
+            const key = `${provider}:${project.id}`
+            const databases = read(providerDatabases)[key]
+            return (
+              <Stack key={key} gap="xs">
+                <Row justify="between" align="center" gap="sm">
+                  <Stack gap="none">
+                    <Text>{project.name}</Text>
+                    <Text muted>{project.detail || project.id}</Text>
+                  </Stack>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => void loadDatabases(provider, project.id)}
+                  >
+                    Ver bases
+                  </Button>
+                </Row>
+                {databases?.status === 'loading' ? (
+                  <Skeleton lines={1} label={`Bases de ${project.name}`} />
+                ) : null}
+                {databases?.status === 'error' ? (
+                  <Callout tone="danger" title="No se pudieron leer las bases">
+                    {databases.error}
+                  </Callout>
+                ) : null}
+                {databases?.status === 'loaded'
+                  ? databases.value.map((database) => (
+                      <Row
+                        key={`${key}:${database.name}`}
+                        justify="between"
+                        align="center"
+                        gap="sm"
+                      >
+                        <Stack gap="none">
+                          <Text>{database.name}</Text>
+                          <Text muted>
+                            {[database.role, database.branch].filter(Boolean).join(' · ')}
+                          </Text>
+                        </Stack>
+                        <Button
+                          size="sm"
+                          disabled={read(connectBusy) === key}
+                          onPress={() => void openDatabase(provider, project.id, database.name)}
+                        >
+                          Abrir
+                        </Button>
+                      </Row>
+                    ))
+                  : null}
+              </Stack>
+            )
+          })}
         </>
       )}
+
+      {read(providerNotice) ? (
+        <Callout tone="success" title="Conexión añadida">
+          {read(providerNotice)}
+        </Callout>
+      ) : null}
     </Stack>
   )
 }
