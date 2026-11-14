@@ -164,7 +164,7 @@ describe('worktree connection refs', () => {
     const { worker: changed } = await start([{ name: 'api', env }], { envVariable: 'OTHER_URL' })
 
     await expect(changed.request('explorer.listObjects', { ref })).rejects.toThrow(
-      /not the configured connection variable/,
+      /no es la variable de conexión configurada/,
     )
     await changed.deactivate()
   })

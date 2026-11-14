@@ -69,7 +69,7 @@ export default function activate(orca: OrcaWorkerApi): void {
   orca.commands.register('db-studio.openSqliteFile', async () => {
     await orca.storage.set(SQLITE_FORM_REQUEST_KEY, true)
     orca.panels.post('sqlite.formRequested', {})
-    return 'Add the SQLite file in the DB Studio panel.'
+    return 'Añade el fichero SQLite en el panel de DB Studio.'
   })
 }
 

@@ -260,7 +260,7 @@ function clientConfig(config: PostgresConfig, secret: string | undefined): Clien
 export const postgresDriver: Driver = {
   async connect(config: ConnectionConfig, secret: string | undefined): Promise<Session> {
     if (config.engine !== 'postgres')
-      throw new Error(`Not a PostgreSQL connection: ${config.engine}`)
+      throw new Error(`No es una conexión PostgreSQL: ${config.engine}`)
     const session = new PostgresSession(
       await import('../../../vendor/pg.js'),
       clientConfig(config, secret),

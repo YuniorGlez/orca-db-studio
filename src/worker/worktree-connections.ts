@@ -124,14 +124,14 @@ export async function resolveWorktree(
 ): Promise<WorktreeTarget> {
   // A document may name any variable; only the configured one is read, as the panel lists it.
   if (ref.variable !== (await variableName(orca))) {
-    throw new Error(`${ref.variable} is not the configured connection variable`)
+    throw new Error(`${ref.variable} no es la variable de conexión configurada`)
   }
   const workspace = (await listLocalWorkspaces(orca)).find((w) => w.id === ref.workspaceId)
-  if (!workspace) throw new Error('That workspace is no longer open')
+  if (!workspace) throw new Error('Ese espacio de trabajo ya no está abierto')
   const target = targetOf(await variableIn(workspace.path, ref.variable))
   if (!target) {
     throw new Error(
-      `${ref.variable} is not a PostgreSQL or MySQL URL in ${workspace.name}'s .env files`,
+      `${ref.variable} no es una URL de PostgreSQL o MySQL en los ficheros .env de ${workspace.name}`,
     )
   }
   return target

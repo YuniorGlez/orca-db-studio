@@ -67,7 +67,7 @@ async function targetFor(orca: OrcaWorkerApi, ref: string): Promise<Target> {
   }
   const saved = await findSaved(orca, ref)
   if (saved) return { config: saved, password: () => passwordOf(orca, ref) }
-  throw new Error(`No connection ${ref}`)
+  throw new Error(`No existe la conexión ${ref}`)
 }
 
 export function createConnections(orca: OrcaWorkerApi): Connections {

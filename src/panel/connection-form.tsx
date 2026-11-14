@@ -28,7 +28,7 @@ const ENGINES = [
 /** Orca's Select drops an empty value, so "no environment" is a word of its own here. */
 const NO_ENVIRONMENT = 'none'
 const ENVIRONMENT_OPTIONS = [
-  { value: NO_ENVIRONMENT, label: 'None' },
+  { value: NO_ENVIRONMENT, label: 'Ninguno' },
   ...ENVIRONMENTS.map((value) => ({ value, label: value })),
 ]
 const TONE_OPTIONS = TONES.map((value) => ({ value, label: value }))
@@ -41,18 +41,18 @@ function ServerFields({ draft }: FormPartProps) {
   return (
     <>
       <Input label="Host" value={draft.host} onChange={(host) => editDraft({ host })} />
-      <Input label="Port" value={draft.port} onChange={(port) => editDraft({ port })} />
+      <Input label="Puerto" value={draft.port} onChange={(port) => editDraft({ port })} />
       <Input
-        label="Database"
+        label="Base de datos"
         value={draft.database}
         onChange={(database) => editDraft({ database })}
       />
-      <Input label="User" value={draft.user} onChange={(user) => editDraft({ user })} />
+      <Input label="Usuario" value={draft.user} onChange={(user) => editDraft({ user })} />
       <Input
-        label="Password"
+        label="Contraseña"
         type="password"
         value={read(formPassword)}
-        placeholder={draft.hasPassword ? 'Unchanged' : ''}
+        placeholder={draft.hasPassword ? 'Sin cambios' : ''}
         onChange={(password) => set(formPassword, password)}
       />
     </>
@@ -65,7 +65,7 @@ function EnvironmentFields({ draft }: FormPartProps) {
   return (
     <>
       <Select
-        label="Environment"
+        label="Entorno"
         value={environment === '' ? NO_ENVIRONMENT : environment}
         options={ENVIRONMENT_OPTIONS}
         onChange={(value) => setEnvironment(value === NO_ENVIRONMENT ? '' : (value as Environment))}
@@ -86,15 +86,15 @@ function ConnectionFields({ draft }: FormPartProps) {
     <>
       {draft.engine === 'sqlite' ? null : (
         <Input
-          label="Connection string"
+          label="Cadena de conexión"
           type="password"
           placeholder="postgres://user:password@host:5432/database"
           onChange={pasteConnectionString}
         />
       )}
-      <Input label="Name" value={draft.name} onChange={(name) => editDraft({ name })} />
+      <Input label="Nombre" value={draft.name} onChange={(name) => editDraft({ name })} />
       <Select
-        label="Engine"
+        label="Motor"
         value={draft.engine}
         options={ENGINES}
         onChange={(value) => setEngine(value as Engine)}
@@ -111,17 +111,17 @@ function FormButtons({ draft }: FormPartProps) {
     <Row gap="sm" justify="end">
       {draft.ref === undefined ? null : (
         <Button variant="ghost" tone="danger" disabled={busy} onPress={deleteFromForm}>
-          Delete
+          Eliminar
         </Button>
       )}
       <Button variant="ghost" onPress={closeForm}>
-        Cancel
+        Cancelar
       </Button>
       <Button disabled={busy} onPress={testForm}>
-        Test
+        Probar
       </Button>
       <Button tone="accent" disabled={busy} onPress={saveForm}>
-        Save
+        Guardar
       </Button>
     </Row>
   )
@@ -131,13 +131,13 @@ export function ConnectionForm() {
   const draft = read(formDraft)
   if (!draft) return null
   return (
-    <Card title={draft.ref === undefined ? 'New connection' : 'Edit connection'}>
+    <Card title={draft.ref === undefined ? 'Nueva conexión' : 'Editar conexión'}>
       <Stack gap="sm">
         <ConnectionFields draft={draft} />
         {draft.notice ? (
           <Callout
             tone={draft.notice.tone}
-            title={draft.notice.tone === 'danger' ? 'Could not continue' : 'Tested'}
+            title={draft.notice.tone === 'danger' ? 'No se pudo continuar' : 'Probada'}
           >
             {draft.notice.text}
           </Callout>

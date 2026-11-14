@@ -213,7 +213,7 @@ async function run(
 export function testForm(): Promise<void> {
   return run('testing', async (draft) => {
     await plugin.request('connection.test', input(draft))
-    return 'Connection works'
+    return 'La conexión funciona'
   })
 }
 

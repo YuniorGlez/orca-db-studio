@@ -98,8 +98,8 @@ function formOf({ id: _id, ...form }: StoredConnection): ConnectionForm {
 function cleanLabel(form: ConnectionForm): { label?: StoredLabel } {
   if (!form.label) return {}
   const { environment, tone } = form.label
-  if (!ENVIRONMENTS.includes(environment)) throw new Error('Choose an environment')
-  if (!TONES.includes(tone)) throw new Error('Choose a color')
+  if (!ENVIRONMENTS.includes(environment)) throw new Error('Elige un entorno')
+  if (!TONES.includes(tone)) throw new Error('Elige un color')
   return { label: { environment, tone } }
 }
 
@@ -112,14 +112,14 @@ function cleanForm(form: ConnectionForm): ConnectionForm {
   const label = cleanLabel(form)
   if (form.engine === 'sqlite') {
     const path = form.path.trim()
-    if (!isAbsolute(path)) throw new Error('Enter an absolute path to a SQLite file')
+    if (!isAbsolute(path)) throw new Error('Introduce una ruta absoluta a un fichero SQLite')
     return { name: name || basename(path), engine: 'sqlite', path: normalize(path), ...label }
   }
-  if (!name) throw new Error('Enter a name for the connection')
+  if (!name) throw new Error('Introduce un nombre para la conexión')
   const host = form.host.trim()
-  if (!host) throw new Error('Enter a host')
+  if (!host) throw new Error('Introduce un host')
   if (!Number.isInteger(form.port) || form.port < 1 || form.port > 65535) {
-    throw new Error('Enter a port between 1 and 65535')
+    throw new Error('Introduce un puerto entre 1 y 65535')
   }
   const { label: _sent, ...server } = form
   return { ...server, name, host, database: form.database.trim(), user: form.user.trim(), ...label }
@@ -155,7 +155,7 @@ export async function findSaved(
 
 export async function getSaved(orca: OrcaWorkerApi, ref: string): Promise<SavedConnection> {
   const found = (await storedNow(orca)).find((c) => c.id === ref)
-  if (!found) throw new Error(`No connection ${ref}`)
+  if (!found) throw new Error(`No existe la conexión ${ref}`)
   return { form: formOf(found), hasPassword: (await orca.secrets.get(passwordKey(ref))) !== null }
 }
 
@@ -167,7 +167,7 @@ async function requireSecretsStore(orca: OrcaWorkerApi): Promise<void> {
   const { status } = await orca.host.call('secrets.protection', {})
   if (status === 'unavailable') {
     throw new Error(
-      "Orca's secrets store is unavailable on this system, so a password cannot be saved. Save the connection without a password.",
+      'El almacén de secretos de Orca no está disponible en este sistema, así que no se puede guardar la contraseña. Guarda la conexión sin contraseña.',
     )
   }
 }
@@ -176,7 +176,7 @@ async function requireSecretsStore(orca: OrcaWorkerApi): Promise<void> {
 function refuseDuplicateFile(all: StoredConnection[], form: ConnectionForm, id: string): void {
   if (form.engine !== 'sqlite') return
   const other = all.find((c) => c.id !== id && c.engine === 'sqlite' && c.path === form.path)
-  if (other) throw new Error(`This file is already saved as ${other.name}`)
+  if (other) throw new Error(`Este fichero ya está guardado como ${other.name}`)
 }
 
 interface SaveInput {
@@ -205,7 +205,7 @@ async function save(
   const form = cleanForm(input.form)
   const all = await stored(orca)
   if (input.ref && !all.some((c) => c.id === input.ref))
-    throw new Error(`No connection ${input.ref}`)
+    throw new Error(`No existe la conexión ${input.ref}`)
   const id = input.ref ?? crypto.randomUUID()
   refuseDuplicateFile(all, form, id)
   await check(configOfClean(form))
@@ -240,7 +240,7 @@ export function deleteSaved(orca: OrcaWorkerApi, ref: string): Promise<void> {
 
 async function deleteStored(orca: OrcaWorkerApi, ref: string): Promise<void> {
   const all = await stored(orca)
-  if (!all.some((c) => c.id === ref)) throw new Error(`No connection ${ref}`)
+  if (!all.some((c) => c.id === ref)) throw new Error(`No existe la conexión ${ref}`)
   await orca.storage.set(
     SAVED_CONNECTIONS_KEY,
     all.filter((c) => c.id !== ref),

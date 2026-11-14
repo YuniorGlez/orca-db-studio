@@ -26,13 +26,13 @@ describe('gridModel', () => {
   test('says how many rows it kept when the row limit cut the result off', () => {
     const model = gridModel({ columns: ['id'], rows: [[1], [2], [3]], truncated: true })
 
-    expect(model.notice).toBe('Showing the first 3 rows. The row limit cut the result off.')
+    expect(model.notice).toBe('Se muestran 3 filas. El límite de filas ha recortado el resultado.')
     expect(model.rows).toHaveLength(3)
   })
 
   test('reports the affected rows of a statement without rows', () => {
     expect(gridModel({ columns: [], rows: [], truncated: false, affectedRows: 1 }).notice).toBe(
-      '1 row affected.',
+      '1 fila afectada.',
     )
   })
 })
@@ -68,7 +68,7 @@ describe('fullValueModel', () => {
     const model = fullValueModel({ text: '{"a":"xxxx', cut: true })
 
     expect(model.notice).toBe(
-      'Showing the first part of the value: it is too large to show in full and was cut.',
+      'Se muestra solo el principio del valor: es demasiado grande para verlo entero y se ha recortado.',
     )
     expect(model.text).toBe('{"a":"xxxx')
   })

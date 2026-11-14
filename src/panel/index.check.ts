@@ -123,7 +123,7 @@ export default defineCheck({
           ...FILLED_FORM,
           notice: {
             tone: 'danger',
-            text: "Orca's secrets store is unavailable on this system, so a password cannot be saved. Save the connection without a password.",
+            text: 'El almacén de secretos de Orca no está disponible en este sistema, así que no se puede guardar la contraseña. Guarda la conexión sin contraseña.',
           },
         },
       },

@@ -38,7 +38,7 @@ async function targetWorkspace(
 ): Promise<LocalWorkspace | undefined> {
   if (workspaceId === undefined) return focusedWorkspace(orca, workspaces)
   const chosen = workspaces.find((w) => w.id === workspaceId)
-  if (!chosen) throw new Error('That workspace is no longer open')
+  if (!chosen) throw new Error('Ese espacio de trabajo ya no está abierto')
   return chosen
 }
 
@@ -65,7 +65,7 @@ export async function openTable(
   input: OpenTableInput,
 ): Promise<OpenTableResult> {
   const workspaces = await listLocalWorkspaces(orca)
-  if (workspaces.length === 0) throw new Error('Open a workspace to open a table')
+  if (workspaces.length === 0) throw new Error('Abre un espacio de trabajo para abrir una tabla')
 
   const schema = await connections.quoteIdent(input.ref, input.schema)
   const table = await connections.quoteIdent(input.ref, input.table)

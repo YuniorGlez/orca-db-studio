@@ -46,7 +46,7 @@ function endQuietly(connection: MysqlConnection): Promise<void> {
 
 function failureOf(error: Error & { errno?: number }): Error {
   return error.errno === ER_QUERY_INTERRUPTED
-    ? new Error('Query cancelled', { cause: error })
+    ? new Error('Consulta cancelada', { cause: error })
     : error
 }
 
@@ -286,7 +286,7 @@ function connectionOptions(config: MysqlConfig, secret: string | undefined): Con
 
 export const mysqlDriver: Driver = {
   async connect(config: ConnectionConfig, secret: string | undefined): Promise<Session> {
-    if (config.engine !== 'mysql') throw new Error(`Not a MySQL connection: ${config.engine}`)
+    if (config.engine !== 'mysql') throw new Error(`No es una conexión MySQL: ${config.engine}`)
     const { mysql } = await import('../../../vendor/mysql2.js')
     const options = connectionOptions(config, secret)
     const connection = await connectTo(mysql, options)

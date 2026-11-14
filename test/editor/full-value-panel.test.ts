@@ -30,13 +30,15 @@ describe('createFullValuePanel', () => {
 
   test('shows why a cell could not be read', async () => {
     const { element, rendered, panel } = setup(async () => {
-      throw new Error('The result is no longer available: run the query again.')
+      throw new Error('El resultado ya no está disponible: vuelve a ejecutar la consulta.')
     })
 
     await panel.show(0, 0)
 
     expect(element.hidden).toBe(false)
-    expect(rendered).toEqual([{ error: 'The result is no longer available: run the query again.' }])
+    expect(rendered).toEqual([
+      { error: 'El resultado ya no está disponible: vuelve a ejecutar la consulta.' },
+    ])
   })
 
   test('an earlier, slower selection does not land after a later one', async () => {

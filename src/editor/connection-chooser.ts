@@ -24,12 +24,12 @@ export function createConnectionChooser(
   notice.hidden = true
 
   const select = document.createElement('select')
-  select.setAttribute('aria-label', 'Choose connection')
+  select.setAttribute('aria-label', 'Elegir conexión')
   select.disabled = disabled
   function fill(listed: ConnectionEntry[]): void {
     const kept = select.value
     select.replaceChildren(
-      new Option('Choose connection', ''),
+      new Option('Elegir conexión', ''),
       ...listed.map((entry) => new Option(optionText(entry), entry.ref)),
     )
     // A choice still on offer stays chosen: the registry changing must not undo it.

@@ -22,9 +22,9 @@ function plural(count: number, noun: string): string {
 export function gridModel(result: QueryResult): GridModel {
   let notice: string | undefined
   if (result.truncated) {
-    notice = `Showing the first ${plural(result.rows.length, 'row')}. The row limit cut the result off.`
+    notice = `Se muestran ${plural(result.rows.length, 'fila')}. El límite de filas ha recortado el resultado.`
   } else if (result.columns.length === 0 && result.affectedRows !== undefined) {
-    notice = `${plural(result.affectedRows, 'row')} affected.`
+    notice = `${plural(result.affectedRows, 'fila')} afectada${result.affectedRows === 1 ? '' : 's'}.`
   }
   return { headers: result.columns, rows: result.rows.map((row) => row.map(cell)), notice }
 }
@@ -52,7 +52,8 @@ export function fullValueModel(value: CellValue): FullValueModel {
     return {
       text: value.text,
       isNull: false,
-      notice: 'Showing the first part of the value: it is too large to show in full and was cut.',
+      notice:
+        'Se muestra solo el principio del valor: es demasiado grande para verlo entero y se ha recortado.',
     }
   }
   return { text: prettyJson(value.text), isNull: false, notice: undefined }

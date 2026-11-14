@@ -22,7 +22,7 @@ interface Pending {
 
 function formatSeconds(ms: number): string {
   const seconds = Math.round(ms / 100) / 10
-  return `${seconds} ${seconds === 1 ? 'second' : 'seconds'}`
+  return `${seconds} ${seconds === 1 ? 'segundo' : 'segundos'}`
 }
 
 function startThread(path: string): Thread {
@@ -44,7 +44,7 @@ function startThread(path: string): Thread {
     else call?.reject(new Error(reply.message))
   })
   worker.on('error', failAll)
-  worker.on('exit', () => failAll(new Error('The SQLite session ended')))
+  worker.on('exit', () => failAll(new Error('La sesión SQLite ha terminado')))
 
   return {
     call(op, input) {
@@ -96,7 +96,10 @@ class SqliteSession implements Session {
   #startTimeout(thread: Thread, timeoutMs: number | undefined): () => void {
     if (!timeoutMs || timeoutMs <= 0) return () => undefined
     const timer = setTimeout(() => {
-      this.#stop(thread, new Error(`Query timed out after ${formatSeconds(timeoutMs)}`))
+      this.#stop(
+        thread,
+        new Error(`La consulta ha superado el tiempo máximo de ${formatSeconds(timeoutMs)}`),
+      )
     }, timeoutMs)
     timer.unref()
     return () => clearTimeout(timer)
@@ -139,7 +142,7 @@ class SqliteSession implements Session {
   async cancel(queryId: string): Promise<void> {
     const thread = this.#thread
     if (!thread || !this.#running.has(queryId)) return
-    this.#stop(thread, new Error('Query cancelled'))
+    this.#stop(thread, new Error('Consulta cancelada'))
   }
 
   quoteIdent(name: string): string {
@@ -149,13 +152,13 @@ class SqliteSession implements Session {
   async close(): Promise<void> {
     const thread = this.#thread
     this.#thread = undefined
-    thread?.stop(new Error('The SQLite session was closed'))
+    thread?.stop(new Error('La sesión SQLite se ha cerrado'))
   }
 }
 
 export const sqliteDriver: Driver = {
   async connect(config: ConnectionConfig): Promise<Session> {
-    if (config.engine !== 'sqlite') throw new Error(`Not a SQLite connection: ${config.engine}`)
+    if (config.engine !== 'sqlite') throw new Error(`No es una conexión SQLite: ${config.engine}`)
     const session = new SqliteSession(config.path)
     try {
       await session.thread().call('open', {})

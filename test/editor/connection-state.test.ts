@@ -61,7 +61,7 @@ describe('chooserState', () => {
   })
 
   test('an empty registry points to the panel', () => {
-    expect(chooserState(undefined, [], false).notice).toContain('DB Studio panel')
+    expect(chooserState(undefined, [], false).notice).toContain('panel de DB Studio')
   })
 
   test('an unlistable registry leaves the document line standing', () => {
@@ -72,6 +72,6 @@ describe('chooserState', () => {
   })
 
   test('a read-only file says it cannot take a connection', () => {
-    expect(chooserState(undefined, [SHOP], true).notice).toContain('read-only')
+    expect(chooserState(undefined, [SHOP], true).notice).toContain('solo lectura')
   })
 })

@@ -103,7 +103,9 @@ describe('saving a SQLite file', () => {
     const w = await start()
     await saveSqlite(w, path, 'Shop')
 
-    await expect(saveSqlite(w, path, 'Again')).rejects.toThrow('This file is already saved as Shop')
+    await expect(saveSqlite(w, path, 'Again')).rejects.toThrow(
+      'Este fichero ya está guardado como Shop',
+    )
     expect((await w.request('connections.list')).saved).toHaveLength(1)
   })
 
@@ -112,7 +114,7 @@ describe('saving a SQLite file', () => {
     await writeFile(path, 'plain text')
     const w = await start()
 
-    await expect(saveSqlite(w, path)).rejects.toThrow(`${path} is not a SQLite database`)
+    await expect(saveSqlite(w, path)).rejects.toThrow(`${path} no es una base de datos SQLite`)
     expect(await w.request('connections.list')).toEqual({ saved: [], worktrees: [] })
   })
 
@@ -120,7 +122,7 @@ describe('saving a SQLite file', () => {
     const w = await start()
 
     await expect(saveSqlite(w, 'data/app.db')).rejects.toThrow(
-      'Enter an absolute path to a SQLite file',
+      'Introduce una ruta absoluta a un fichero SQLite',
     )
   })
 
@@ -237,7 +239,7 @@ describe('deleting a SQLite connection', () => {
 
     await expect(
       w.request('query.run', { ref, sql: 'SELECT 1', documentId: 'd1' }),
-    ).rejects.toThrow(`No connection ${ref}`)
+    ).rejects.toThrow(`No existe la conexión ${ref}`)
     await w.deactivate()
   })
 
@@ -347,7 +349,7 @@ describe('explorer.listObjects', () => {
     const w = await start()
 
     await expect(w.request('explorer.listObjects', { ref: path })).rejects.toThrow(
-      `No connection ${path}`,
+      `No existe la conexión ${path}`,
     )
   })
 })
@@ -400,7 +402,9 @@ describe('editor.schema', () => {
     const path = await createDatabase(join(root, 'shop.db'))
     const w = await start()
 
-    await expect(w.request('editor.schema', { ref: path })).rejects.toThrow(`No connection ${path}`)
+    await expect(w.request('editor.schema', { ref: path })).rejects.toThrow(
+      `No existe la conexión ${path}`,
+    )
   })
 })
 
@@ -411,7 +415,7 @@ describe('Open SQLite File command', () => {
 
     const message = await w.command('db-studio.openSqliteFile')
 
-    expect(message).toBe('Add the SQLite file in the DB Studio panel.')
+    expect(message).toBe('Añade el fichero SQLite en el panel de DB Studio.')
     expect(host.data().storage[SQLITE_FORM_REQUEST_KEY]).toBe(true)
     expect(w.posts).toContainEqual({ event: 'sqlite.formRequested', payload: {} })
   })
@@ -539,7 +543,7 @@ describe('table.open', () => {
     const ref = await shopRef(w)
 
     await expect(w.request('table.open', { ref, schema: 'main', table: 'orders' })).rejects.toThrow(
-      'Open a workspace to open a table',
+      'Abre un espacio de trabajo para abrir una tabla',
     )
   })
 
@@ -548,7 +552,7 @@ describe('table.open', () => {
     const ref = await shopRef(w)
 
     await expect(w.request('table.open', { ref, schema: 'main', table: 'orders' })).rejects.toThrow(
-      'Open a workspace to open a table',
+      'Abre un espacio de trabajo para abrir una tabla',
     )
     expect(host.callsOf('editor.open')).toEqual([])
   })
@@ -589,7 +593,7 @@ describe('table.open', () => {
 
     await expect(
       w.request('table.open', { ref: '/nope.db', schema: 'main', table: 'orders' }),
-    ).rejects.toThrow('No connection /nope.db')
+    ).rejects.toThrow('No existe la conexión /nope.db')
   })
 })
 
@@ -734,7 +738,7 @@ describe('connection.save without a secrets store', () => {
 
     await expect(
       w.request('connection.save', { form: PG_FORM, password: 's3cret-pw' }),
-    ).rejects.toThrow(/secrets store is unavailable/)
+    ).rejects.toThrow(/almacén de secretos/)
 
     expect(host.data().storage).toEqual({})
     expect(host.data().secrets).toEqual({})
@@ -778,14 +782,16 @@ describe('editing and deleting a connection', () => {
 
     expect((await w.request('connections.list')).saved).toEqual([])
     expect(host.data().secrets).toEqual({})
-    await expect(w.request('connection.get', { ref })).rejects.toThrow(`No connection ${ref}`)
+    await expect(w.request('connection.get', { ref })).rejects.toThrow(
+      `No existe la conexión ${ref}`,
+    )
   })
 
   test('refuses an invalid form', async () => {
     const w = await mountWorker(worker, { host: mockHost() })
 
     await expect(w.request('connection.save', { form: { ...PG_FORM, host: ' ' } })).rejects.toThrow(
-      'Enter a host',
+      'Introduce un host',
     )
   })
 
@@ -1019,7 +1025,7 @@ describe('query.cell', () => {
     await w.request('query.run', { ref, sql: 'SELECT 9 AS a', documentId: 'd1' })
 
     await expect(w.request('query.cell', { documentId: 'd1', row: 0, column: 1 })).rejects.toThrow(
-      /no such cell/i,
+      /No existe esa celda/i,
     )
     expect((await w.request('query.cell', { documentId: 'd1', row: 0, column: 0 })).text).toBe('9')
   })
@@ -1031,7 +1037,7 @@ describe('query.cell', () => {
     ).rejects.toThrow()
 
     await expect(w.request('query.cell', { documentId: 'd1', row: 0, column: 0 })).rejects.toThrow(
-      /run the query again/i,
+      /vuelve a ejecutar la consulta/i,
     )
   })
 
@@ -1041,7 +1047,7 @@ describe('query.cell', () => {
     await w.request('query.release', { documentId: 'd1' })
 
     await expect(w.request('query.cell', { documentId: 'd1', row: 0, column: 0 })).rejects.toThrow(
-      /run the query again/i,
+      /vuelve a ejecutar la consulta/i,
     )
   })
 
@@ -1053,7 +1059,7 @@ describe('query.cell', () => {
 
     await expect(
       w.request('query.cell', { documentId: 'doc-0', row: 0, column: 0 }),
-    ).rejects.toThrow(/run the query again/i)
+    ).rejects.toThrow(/vuelve a ejecutar la consulta/i)
     expect((await w.request('query.cell', { documentId: 'doc-16', row: 0, column: 0 })).text).toBe(
       '1',
     )
@@ -1063,7 +1069,7 @@ describe('query.cell', () => {
     const { w } = await ranOnce('SELECT 1 AS a')
 
     await expect(w.request('query.cell', { documentId: 'd1', row: 3, column: 0 })).rejects.toThrow(
-      /no such cell/i,
+      /No existe esa celda/i,
     )
   })
 })
@@ -1136,15 +1142,15 @@ describe('query.cancel and the query timeout', () => {
 
     await w.request('query.cancel', { documentId: 'd1' })
 
-    expect(await first).toBe('Query cancelled')
-    expect(await second).toBe('Query cancelled')
+    expect(await first).toBe('Consulta cancelada')
+    expect(await second).toBe('Consulta cancelada')
   })
 
   test('a query over queryTimeoutSeconds ends with a timeout error, and the next one works', async () => {
     const { w, ref } = await slowRunner({ queryTimeoutSeconds: 1 })
 
     await expect(w.request('query.run', { ref, sql: SLOW, documentId: 'd1' })).rejects.toThrow(
-      'Query timed out after 1 second',
+      'La consulta ha superado el tiempo máximo de 1 segundo',
     )
 
     const next = await w.request('query.run', { ref, sql: 'SELECT 1 AS one', documentId: 'd1' })
@@ -1221,12 +1227,12 @@ describe('environment label', () => {
 
     await expect(
       w.request('connection.save', { form: { ...sqliteForm(path), label: bad } }),
-    ).rejects.toThrow('Choose an environment')
+    ).rejects.toThrow('Elige un entorno')
     await expect(
       w.request('connection.save', {
         form: { ...sqliteForm(path), label: { environment: 'prod', tone: 'pink' } as never },
       }),
-    ).rejects.toThrow('Choose a color')
+    ).rejects.toThrow('Elige un color')
     expect((await w.request('connections.list')).saved).toEqual([])
   })
 

@@ -81,7 +81,7 @@ describe('SQLite driver', () => {
     await writeFile(path, 'just some text, not a database')
     const driver = await loadDriver('sqlite')
     await expect(driver.connect({ engine: 'sqlite', path }, undefined)).rejects.toThrow(
-      `${path} is not a SQLite database`,
+      `${path} no es una base de datos SQLite`,
     )
   })
 
@@ -89,7 +89,7 @@ describe('SQLite driver', () => {
     const path = join(dir, 'missing.db')
     const driver = await loadDriver('sqlite')
     await expect(driver.connect({ engine: 'sqlite', path }, undefined)).rejects.toThrow(
-      `No file at ${path}`,
+      `No hay ningún fichero en ${path}`,
     )
   })
 })

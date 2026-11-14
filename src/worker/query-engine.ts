@@ -97,10 +97,10 @@ function createKeptValues(): {
 }
 
 function readCell(rows: unknown[][] | undefined, row: number, column: number): CellValue {
-  if (!rows) throw new Error('The result is no longer available: run the query again.')
+  if (!rows) throw new Error('El resultado ya no está disponible: vuelve a ejecutar la consulta.')
   const cells = rows[row]
   if (!cells || column < 0 || column >= cells.length) {
-    throw new Error(`No such cell: row ${row}, column ${column}`)
+    throw new Error(`No existe esa celda: fila ${row}, columna ${column}`)
   }
   const text = fullText(cells[column])
   return text === null ? { text: null, cut: false } : cutToAnswer(text)

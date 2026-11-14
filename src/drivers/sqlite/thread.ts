@@ -46,10 +46,11 @@ function checkFile(file: string): void {
   let size: number
   try {
     const stat = statSync(file)
-    if (!stat.isFile()) throw new Error(`${file} is not a file`)
+    if (!stat.isFile()) throw new Error(`${file} no es un fichero`)
     size = stat.size
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new Error(`No file at ${file}`)
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT')
+      throw new Error(`No hay ningún fichero en ${file}`)
     throw error
   }
   if (size === 0) return
@@ -60,7 +61,8 @@ function checkFile(file: string): void {
   } finally {
     closeSync(fd)
   }
-  if (header.toString('latin1') !== HEADER) throw new Error(`${file} is not a SQLite database`)
+  if (header.toString('latin1') !== HEADER)
+    throw new Error(`${file} no es una base de datos SQLite`)
 }
 
 function database(): DatabaseSync {

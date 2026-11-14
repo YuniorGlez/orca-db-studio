@@ -6,10 +6,10 @@ export function WorkspacePicker() {
   const question = read(workspaceQuestion)
   if (!question) return null
   return (
-    <Card title="Open in which workspace?">
+    <Card title="¿En qué espacio de trabajo lo abro?">
       <Stack gap="sm">
-        <Text muted>{`The query document for ${question.table.table} goes in .db-studio/.`}</Text>
-        <List label="Workspaces">
+        <Text muted>El documento de consulta de {question.table.table} va en .db-studio/.</Text>
+        <List label="Espacios de trabajo">
           {question.workspaces.map((workspace) => (
             <ListItem
               key={workspace.id}
@@ -20,7 +20,7 @@ export function WorkspacePicker() {
           ))}
         </List>
         <Button variant="ghost" onPress={cancelWorkspaceQuestion}>
-          Cancel
+          Cancelar
         </Button>
       </Stack>
     </Card>

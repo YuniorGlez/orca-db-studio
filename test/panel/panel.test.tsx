@@ -50,9 +50,9 @@ describe('connections list', () => {
       host: mockHost({ requests: { 'connections.list': { saved: [], worktrees: [] } } }),
     })
 
-    expect(p.find({ label: 'No connections' })).not.toBeNull()
-    await p.press({ text: 'New connection' })
-    expect(p.find({ label: 'Name' })).not.toBeNull()
+    expect(p.find({ label: 'No hay conexiones' })).not.toBeNull()
+    await p.press({ text: 'Nueva conexión' })
+    expect(p.find({ label: 'Nombre' })).not.toBeNull()
   })
 
   test('lists saved and worktree connections in one tree, each marked with its origin', async () => {
@@ -99,7 +99,7 @@ describe('connections list', () => {
 
     await p.activateItem({ role: 'tree' }, JSON.stringify(['connection', API.ref]))
 
-    expect(p.find({ label: 'Name' })).toBeNull()
+    expect(p.find({ label: 'Nombre' })).toBeNull()
     expect(host.callsOf('plugin.request')).not.toContainEqual(
       expect.objectContaining({ name: 'connection.get' }),
     )
@@ -124,13 +124,13 @@ describe('SQLite in the connection form', () => {
   test('choosing SQLite asks for a path instead of a server', async () => {
     const { p } = await mountWith()
 
-    await p.press({ label: 'New connection' })
-    await p.select({ label: 'Engine' }, 'sqlite')
+    await p.press({ label: 'Nueva conexión' })
+    await p.select({ label: 'Motor' }, 'sqlite')
 
-    expect(p.find({ label: 'Path' })).not.toBeNull()
+    expect(p.find({ label: 'Ruta' })).not.toBeNull()
     expect(p.find({ label: 'Host' })).toBeNull()
-    expect(p.find({ label: 'Password' })).toBeNull()
-    expect(p.find({ label: 'Connection string' })).toBeNull()
+    expect(p.find({ label: 'Contraseña' })).toBeNull()
+    expect(p.find({ label: 'Cadena de conexión' })).toBeNull()
   })
 
   test('saves a pasted path with its name', async () => {
@@ -142,43 +142,43 @@ describe('SQLite in the connection form', () => {
       },
     })
 
-    await p.press({ label: 'New connection' })
-    await p.select({ label: 'Engine' }, 'sqlite')
-    await p.type({ label: 'Name' }, 'Shop')
-    await p.type({ label: 'Path' }, '/data/shop.db')
-    await p.press({ text: 'Save' })
+    await p.press({ label: 'Nueva conexión' })
+    await p.select({ label: 'Motor' }, 'sqlite')
+    await p.type({ label: 'Nombre' }, 'Shop')
+    await p.type({ label: 'Ruta' }, '/data/shop.db')
+    await p.press({ text: 'Guardar' })
 
     expect(saved).toEqual({ form: { name: 'Shop', engine: 'sqlite', path: '/data/shop.db' } })
-    expect(p.find({ label: 'Path' })).toBeNull()
+    expect(p.find({ label: 'Ruta' })).toBeNull()
   })
 
   test('a file found in the workspaces fills the path, and the name when it is empty', async () => {
     const { p } = await mountWith()
 
-    await p.press({ label: 'New connection' })
-    await p.select({ label: 'Engine' }, 'sqlite')
-    await p.press({ text: 'Find in workspaces' })
+    await p.press({ label: 'Nueva conexión' })
+    await p.select({ label: 'Motor' }, 'sqlite')
+    await p.press({ text: 'Buscar en los espacios de trabajo' })
     await p.press({ label: 'app.db' })
 
-    expect(p.find({ label: 'Path' })?.props.value).toBe('/work/api/app.db')
-    expect(p.find({ label: 'Name' })?.props.value).toBe('app.db')
+    expect(p.find({ label: 'Ruta' })?.props.value).toBe('/work/api/app.db')
+    expect(p.find({ label: 'Nombre' })?.props.value).toBe('app.db')
   })
 
   test('shows why a file could not be saved and keeps the form open', async () => {
     const { p } = await mountWith({
       'connection.save': () => {
-        throw hostError('action_failed', '/tmp/notes.txt is not a SQLite database')
+        throw hostError('action_failed', '/tmp/notes.txt no es una base de datos SQLite')
       },
     })
 
-    await p.press({ label: 'New connection' })
-    await p.select({ label: 'Engine' }, 'sqlite')
-    await p.type({ label: 'Name' }, 'Notes')
-    await p.type({ label: 'Path' }, '/tmp/notes.txt')
-    await p.press({ text: 'Save' })
+    await p.press({ label: 'Nueva conexión' })
+    await p.select({ label: 'Motor' }, 'sqlite')
+    await p.type({ label: 'Nombre' }, 'Notes')
+    await p.type({ label: 'Ruta' }, '/tmp/notes.txt')
+    await p.press({ text: 'Guardar' })
 
-    expect(p.find({ text: /is not a SQLite database/ })).not.toBeNull()
-    expect(p.find({ label: 'Path' })).not.toBeNull()
+    expect(p.find({ text: /no es una base de datos SQLite/ })).not.toBeNull()
+    expect(p.find({ label: 'Ruta' })).not.toBeNull()
   })
 
   test('Enter on a saved SQLite file edits it; Delete only forgets the file', async () => {
@@ -193,17 +193,17 @@ describe('SQLite in the connection form', () => {
 
     await p.activateItem({ role: 'tree' }, JSON.stringify(['connection', SHOP.ref]))
 
-    expect(p.find({ label: 'Path' })?.props.value).toBe('/data/shop.db')
-    expect(p.find({ text: /stays on disk/ })).not.toBeNull()
-    await p.press({ text: 'Delete' })
+    expect(p.find({ label: 'Ruta' })?.props.value).toBe('/data/shop.db')
+    expect(p.find({ text: /Sigue en el disco/ })).not.toBeNull()
+    await p.press({ text: 'Eliminar' })
     expect(deleted).toEqual({ ref: SHOP.ref })
   })
 
   test('the Open SQLite File command opens the form on SQLite', async () => {
     const { host, p } = await mountWith({}, { [SQLITE_FORM_REQUEST_KEY]: true })
 
-    expect(p.find({ label: 'Engine' })?.props.value).toBe('sqlite')
-    expect(p.find({ label: 'Path' })).not.toBeNull()
+    expect(p.find({ label: 'Motor' })?.props.value).toBe('sqlite')
+    expect(p.find({ label: 'Ruta' })).not.toBeNull()
     expect(host.data().storage[SQLITE_FORM_REQUEST_KEY]).toBe(false)
   })
 
@@ -212,27 +212,27 @@ describe('SQLite in the connection form', () => {
 
     await p.post('sqlite.formRequested', {})
 
-    expect(p.find({ label: 'Path' })).not.toBeNull()
+    expect(p.find({ label: 'Ruta' })).not.toBeNull()
   })
 
   test('switching from SQLite to MySQL gives the MySQL port', async () => {
     const { p } = await mountWith()
 
     await p.post('sqlite.formRequested', {})
-    await p.select({ label: 'Engine' }, 'mysql')
+    await p.select({ label: 'Motor' }, 'mysql')
 
-    expect(p.find({ label: 'Port' })?.props.value).toBe('3306')
+    expect(p.find({ label: 'Puerto' })?.props.value).toBe('3306')
   })
 
   test('the command turns a new form to SQLite, keeping what was typed', async () => {
     const { p } = await mountWith()
 
-    await p.press({ label: 'New connection' })
-    await p.type({ label: 'Name' }, 'Mine')
+    await p.press({ label: 'Nueva conexión' })
+    await p.type({ label: 'Nombre' }, 'Mine')
     await p.post('sqlite.formRequested', {})
 
-    expect(p.find({ label: 'Engine' })?.props.value).toBe('sqlite')
-    expect(p.find({ label: 'Name' })?.props.value).toBe('Mine')
+    expect(p.find({ label: 'Motor' })?.props.value).toBe('sqlite')
+    expect(p.find({ label: 'Nombre' })?.props.value).toBe('Mine')
   })
 
   test('the command leaves a connection being edited alone', async () => {
@@ -247,11 +247,11 @@ describe('SQLite in the connection form', () => {
     const { p } = await mountWith({ 'connection.get': { form: PG_EDIT, hasPassword: true } })
 
     await p.activateItem({ role: 'tree' }, JSON.stringify(['connection', SHOP.ref]))
-    await p.type({ label: 'Password' }, 'typed')
+    await p.type({ label: 'Contraseña' }, 'typed')
     await p.post('sqlite.formRequested', {})
 
     expect(p.find({ label: 'Host' })?.props.value).toBe('db.internal')
-    expect(p.find({ label: 'Password' })?.props.value).toBe('typed')
+    expect(p.find({ label: 'Contraseña' })?.props.value).toBe('typed')
   })
 })
 
@@ -305,17 +305,17 @@ describe('opening a table', () => {
     await p.press({ label: 'api' })
 
     expect(calls[1]).toEqual({ ref: SHOP.ref, schema: 'main', table: 'orders', workspaceId: 'w1' })
-    expect(p.find({ text: /Open in which workspace/ })).toBeNull()
+    expect(p.find({ text: /En qué espacio de trabajo/ })).toBeNull()
   })
 
   test('shows why the table could not be opened', async () => {
     const { p } = await mountShop(() => {
-      throw hostError('action_failed', 'Open a workspace to open a table')
+      throw hostError('action_failed', 'Abre un espacio de trabajo para abrir una tabla')
     })
 
     await p.activateItem(tree, ordersKey)
 
-    expect(p.find({ text: /Open a workspace to open a table/ })).not.toBeNull()
+    expect(p.find({ text: /Abre un espacio de trabajo para abrir una tabla/ })).not.toBeNull()
   })
 })
 
@@ -348,24 +348,24 @@ describe('connection form', () => {
   test('pasting a connection string fills every field it contains', async () => {
     const { p } = await mountWith()
 
-    await p.press({ label: 'New connection' })
-    await p.type({ label: 'Connection string' }, 'postgresql://app:p%40ss@db.internal:6543/shop')
+    await p.press({ label: 'Nueva conexión' })
+    await p.type({ label: 'Cadena de conexión' }, 'postgresql://app:p%40ss@db.internal:6543/shop')
 
     expect(p.find({ label: 'Host' })?.props.value).toBe('db.internal')
-    expect(p.find({ label: 'Port' })?.props.value).toBe('6543')
-    expect(p.find({ label: 'Database' })?.props.value).toBe('shop')
-    expect(p.find({ label: 'User' })?.props.value).toBe('app')
-    expect(p.find({ label: 'Password' })?.props.value).toBe('p@ss')
+    expect(p.find({ label: 'Puerto' })?.props.value).toBe('6543')
+    expect(p.find({ label: 'Base de datos' })?.props.value).toBe('shop')
+    expect(p.find({ label: 'Usuario' })?.props.value).toBe('app')
+    expect(p.find({ label: 'Contraseña' })?.props.value).toBe('p@ss')
   })
 
   test('a mysql:// string selects MySQL with its default port', async () => {
     const { p } = await mountWith()
 
-    await p.press({ label: 'New connection' })
-    await p.type({ label: 'Connection string' }, 'mysql://root@localhost/app')
+    await p.press({ label: 'Nueva conexión' })
+    await p.type({ label: 'Cadena de conexión' }, 'mysql://root@localhost/app')
 
-    expect(p.find({ label: 'Engine' })?.props.value).toBe('mysql')
-    expect(p.find({ label: 'Port' })?.props.value).toBe('3306')
+    expect(p.find({ label: 'Motor' })?.props.value).toBe('mysql')
+    expect(p.find({ label: 'Puerto' })?.props.value).toBe('3306')
   })
 
   test('saves the form values and the password through the worker', async () => {
@@ -377,40 +377,40 @@ describe('connection form', () => {
       },
     })
 
-    await p.press({ label: 'New connection' })
-    await p.type({ label: 'Connection string' }, 'postgres://app:pw@db.internal/shop')
-    await p.type({ label: 'Name' }, 'Shop DB')
-    await p.press({ text: 'Save' })
+    await p.press({ label: 'Nueva conexión' })
+    await p.type({ label: 'Cadena de conexión' }, 'postgres://app:pw@db.internal/shop')
+    await p.type({ label: 'Nombre' }, 'Shop DB')
+    await p.press({ text: 'Guardar' })
 
     expect(saved).toEqual({ form: FORM, password: 'pw' })
-    expect(p.find({ label: 'Connection string' })).toBeNull()
+    expect(p.find({ label: 'Cadena de conexión' })).toBeNull()
   })
 
   test('shows why saving failed and keeps the form open', async () => {
     const { p } = await mountWith({
       'connection.save': () => {
-        throw hostError('action_failed', "Orca's secrets store is unavailable")
+        throw hostError('action_failed', 'El almacén de secretos de Orca no está disponible')
       },
     })
 
-    await p.press({ label: 'New connection' })
-    await p.type({ label: 'Connection string' }, 'postgres://app:pw@db.internal/shop')
-    await p.type({ label: 'Name' }, 'Shop DB')
-    await p.press({ text: 'Save' })
+    await p.press({ label: 'Nueva conexión' })
+    await p.type({ label: 'Cadena de conexión' }, 'postgres://app:pw@db.internal/shop')
+    await p.type({ label: 'Nombre' }, 'Shop DB')
+    await p.press({ text: 'Guardar' })
 
-    expect(p.find({ text: /secrets store is unavailable/ })).not.toBeNull()
+    expect(p.find({ text: /almacén de secretos/ })).not.toBeNull()
     expect(p.find({ label: 'Host' })).not.toBeNull()
   })
 
   test('tests the connection and reports the result', async () => {
     const { p } = await mountWith({ 'connection.test': () => ({}) })
 
-    await p.press({ label: 'New connection' })
-    await p.type({ label: 'Connection string' }, 'postgres://app@db.internal/shop')
-    await p.type({ label: 'Name' }, 'Shop DB')
-    await p.press({ text: 'Test' })
+    await p.press({ label: 'Nueva conexión' })
+    await p.type({ label: 'Cadena de conexión' }, 'postgres://app@db.internal/shop')
+    await p.type({ label: 'Nombre' }, 'Shop DB')
+    await p.press({ text: 'Probar' })
 
-    expect(p.find({ text: /Connection works/ })).not.toBeNull()
+    expect(p.find({ text: /La conexión funciona/ })).not.toBeNull()
   })
 
   test('edits a saved connection without asking for its password again', async () => {
@@ -425,7 +425,7 @@ describe('connection form', () => {
 
     await p.activateItem({ role: 'tree' }, JSON.stringify(['connection', 'c1']))
     await p.type({ label: 'Host' }, 'db2.internal', { replace: true })
-    await p.press({ text: 'Save' })
+    await p.press({ text: 'Guardar' })
 
     expect(saved).toEqual({ ref: 'c1', form: { ...FORM, host: 'db2.internal' } })
   })
@@ -441,7 +441,7 @@ describe('connection form', () => {
     })
 
     await p.activateItem({ role: 'tree' }, JSON.stringify(['connection', 'c1']))
-    await p.press({ text: 'Delete' })
+    await p.press({ text: 'Eliminar' })
 
     expect(deleted).toEqual({ ref: 'c1' })
   })
@@ -449,21 +449,21 @@ describe('connection form', () => {
   test('pasting a string without user or database keeps what was typed', async () => {
     const { p } = await mountWith()
 
-    await p.press({ label: 'New connection' })
-    await p.type({ label: 'Database' }, 'shop')
-    await p.type({ label: 'User' }, 'app')
-    await p.type({ label: 'Connection string' }, 'postgres://db.internal:5432')
+    await p.press({ label: 'Nueva conexión' })
+    await p.type({ label: 'Base de datos' }, 'shop')
+    await p.type({ label: 'Usuario' }, 'app')
+    await p.type({ label: 'Cadena de conexión' }, 'postgres://db.internal:5432')
 
     expect(p.find({ label: 'Host' })?.props.value).toBe('db.internal')
-    expect(p.find({ label: 'Database' })?.props.value).toBe('shop')
-    expect(p.find({ label: 'User' })?.props.value).toBe('app')
+    expect(p.find({ label: 'Base de datos' })?.props.value).toBe('shop')
+    expect(p.find({ label: 'Usuario' })?.props.value).toBe('app')
   })
 
   test('an IPv6 host is filled without its brackets', async () => {
     const { p } = await mountWith()
 
-    await p.press({ label: 'New connection' })
-    await p.type({ label: 'Connection string' }, 'postgres://app@[::1]:5432/shop')
+    await p.press({ label: 'Nueva conexión' })
+    await p.type({ label: 'Cadena de conexión' }, 'postgres://app@[::1]:5432/shop')
 
     expect(p.find({ label: 'Host' })?.props.value).toBe('::1')
   })
@@ -495,7 +495,7 @@ describe('connection form', () => {
 
     await p.expand(tree, JSON.stringify(['connection', 'c1']))
     await p.activateItem(tree, JSON.stringify(['connection', 'c1']))
-    await p.press({ text: 'Save' })
+    await p.press({ text: 'Guardar' })
 
     expect(listed).toBe(2)
   })
@@ -560,17 +560,17 @@ describe('environment label', () => {
   test('the form starts with no environment and a disabled color', async () => {
     const { p } = await mountWith()
 
-    await p.press({ label: 'New connection' })
+    await p.press({ label: 'Nueva conexión' })
 
-    expect(p.find({ label: 'Environment' })?.props.value).toBe('none')
+    expect(p.find({ label: 'Entorno' })?.props.value).toBe('none')
     expect(p.find({ label: 'Color' })?.props.disabled).toBe(true)
   })
 
   test('choosing an environment enables the color and picks its default', async () => {
     const { p } = await mountWith()
-    await p.press({ label: 'New connection' })
+    await p.press({ label: 'Nueva conexión' })
 
-    await p.select({ label: 'Environment' }, 'staging')
+    await p.select({ label: 'Entorno' }, 'staging')
 
     expect(p.find({ label: 'Color' })?.props.disabled).toBeFalsy()
     expect(p.find({ label: 'Color' })?.props.value).toBe('warning')
@@ -578,18 +578,18 @@ describe('environment label', () => {
 
   test('changing the environment resets a color the person had picked', async () => {
     const { p } = await mountWith()
-    await p.press({ label: 'New connection' })
-    await p.select({ label: 'Environment' }, 'dev')
+    await p.press({ label: 'Nueva conexión' })
+    await p.select({ label: 'Entorno' }, 'dev')
     await p.select({ label: 'Color' }, 'neutral')
 
-    await p.select({ label: 'Environment' }, 'prod')
+    await p.select({ label: 'Entorno' }, 'prod')
 
     expect(p.find({ label: 'Color' })?.props.value).toBe('danger')
   })
 
   test('the color offers Orca five tones', async () => {
     const { p } = await mountWith()
-    await p.press({ label: 'New connection' })
+    await p.press({ label: 'Nueva conexión' })
 
     const options = p.find({ label: 'Color' })?.props.options as { value: string }[]
 
@@ -611,12 +611,12 @@ describe('environment label', () => {
       },
     })
 
-    await p.press({ label: 'New connection' })
-    await p.type({ label: 'Connection string' }, 'postgres://app@db:5432/billing')
-    await p.type({ label: 'Name' }, 'Billing DB')
-    await p.select({ label: 'Environment' }, 'prod')
+    await p.press({ label: 'Nueva conexión' })
+    await p.type({ label: 'Cadena de conexión' }, 'postgres://app@db:5432/billing')
+    await p.type({ label: 'Nombre' }, 'Billing DB')
+    await p.select({ label: 'Entorno' }, 'prod')
     await p.select({ label: 'Color' }, 'warning')
-    await p.press({ text: 'Save' })
+    await p.press({ text: 'Guardar' })
 
     expect(saved).toMatchObject({
       form: { name: 'Billing DB', label: { environment: 'prod', tone: 'warning' } },
@@ -633,7 +633,7 @@ describe('environment label', () => {
 
     await p.activateItem({ role: 'tree' }, JSON.stringify(['connection', 'c1']))
 
-    expect(p.find({ label: 'Environment' })?.props.value).toBe('dev')
+    expect(p.find({ label: 'Entorno' })?.props.value).toBe('dev')
     expect(p.find({ label: 'Color' })?.props.value).toBe('neutral')
   })
 
@@ -642,7 +642,7 @@ describe('environment label', () => {
 
     await p.activateItem({ role: 'tree' }, JSON.stringify(['connection', 'c1']))
 
-    expect(p.find({ label: 'Environment' })?.props.value).toBe('none')
+    expect(p.find({ label: 'Entorno' })?.props.value).toBe('none')
     expect(p.find({ label: 'Color' })?.props.disabled).toBe(true)
   })
 
@@ -660,8 +660,8 @@ describe('environment label', () => {
     })
 
     await p.activateItem({ role: 'tree' }, JSON.stringify(['connection', 'c1']))
-    await p.select({ label: 'Environment' }, 'none')
-    await p.press({ text: 'Save' })
+    await p.select({ label: 'Entorno' }, 'none')
+    await p.press({ text: 'Guardar' })
 
     expect(saved).toEqual({ ref: 'c1', form: FORM })
   })
@@ -675,11 +675,11 @@ describe('environment label', () => {
       },
     })
 
-    await p.press({ label: 'New connection' })
-    await p.select({ label: 'Engine' }, 'sqlite')
-    await p.type({ label: 'Path' }, '/data/shop.db')
-    await p.select({ label: 'Environment' }, 'local')
-    await p.press({ text: 'Save' })
+    await p.press({ label: 'Nueva conexión' })
+    await p.select({ label: 'Motor' }, 'sqlite')
+    await p.type({ label: 'Ruta' }, '/data/shop.db')
+    await p.select({ label: 'Entorno' }, 'local')
+    await p.press({ text: 'Guardar' })
 
     expect(saved).toMatchObject({
       form: { engine: 'sqlite', label: { environment: 'local', tone: 'success' } },

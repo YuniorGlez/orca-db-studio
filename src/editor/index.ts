@@ -54,7 +54,7 @@ const STYLE = `
   .grid td.null { opacity: .5; font-style: italic; }
 `
 
-const NO_CONNECTION = 'Choose a connection to run this file.'
+const NO_CONNECTION = 'Elige una conexión para ejecutar este fichero.'
 
 function div(className: string): HTMLDivElement {
   const node = document.createElement('div')
@@ -72,11 +72,11 @@ document.head.append(style)
 
 const toolbar = div('toolbar')
 const run = document.createElement('button')
-run.textContent = 'Run'
+run.textContent = 'Ejecutar'
 const hint = div('hint')
-hint.textContent = 'Runs the selection, or the statement under the cursor (Cmd/Ctrl+Enter)'
+hint.textContent = 'Ejecuta la selección o la sentencia bajo el cursor (Cmd/Ctrl+Enter)'
 const cancel = document.createElement('button')
-cancel.textContent = 'Cancel'
+cancel.textContent = 'Cancelar'
 cancel.hidden = true
 const environmentBadge = createEnvironmentBadge()
 toolbar.append(environmentBadge.badge, run, cancel, hint)
@@ -259,11 +259,11 @@ async function execute(): Promise<void> {
   }
   const sql = editor.selection() ?? statementAt(editor.text(), editor.cursor())
   if (!sql) {
-    renderError(result, 'Nothing to run: put the cursor in a statement or select one.')
+    renderError(result, 'Nada que ejecutar: pon el cursor en una sentencia o selecciona una.')
     return
   }
   if (statementCount(sql) > 1) {
-    renderError(result, 'Select a single statement: the database runs one statement at a time.')
+    renderError(result, 'Selecciona una sola sentencia: la base de datos ejecuta una cada vez.')
     return
   }
   running = true
@@ -272,7 +272,7 @@ async function execute(): Promise<void> {
   fullValuePanel.close()
   // The old grid would still answer clicks, for rows the worker has already dropped.
   const message = div('message')
-  message.textContent = 'Running…'
+  message.textContent = 'Ejecutando…'
   result.replaceChildren(message)
   try {
     renderGrid(

@@ -24,8 +24,10 @@ export function chooserState(
   const needsChoice = ref === undefined || stale
   let notice: string | undefined
   if (!needsChoice) notice = undefined
-  else if (readOnly) notice = 'This file is read-only, so a connection cannot be written to it.'
-  else if (stale) notice = `The connection ${ref} no longer exists. Choose another.`
-  else if (entries?.length === 0) notice = 'No connections yet. Add one in the DB Studio panel.'
+  else if (readOnly)
+    notice = 'Este fichero es de solo lectura, así que no se le puede escribir una conexión.'
+  else if (stale) notice = `La conexión ${ref} ya no existe. Elige otra.`
+  else if (entries?.length === 0)
+    notice = 'Aún no hay conexiones. Añade una en el panel de DB Studio.'
   return { needsChoice, notice }
 }

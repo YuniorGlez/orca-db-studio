@@ -4,7 +4,7 @@
   "id": "db-studio",
   "name": "DB Studio",
   "version": "0.3.1",
-  "description": "Browse and query PostgreSQL, MySQL/MariaDB and SQLite from Orca. Reads each worktree's .env to offer its database.",
+  "description": "Explora y consulta PostgreSQL, MySQL/MariaDB y SQLite desde Orca. Lee el .env de cada worktree para ofrecer su base de datos.",
   "author": {
     "name": "Oscar Botteri",
     "url": "https://github.com/oscarbotteri"
@@ -15,31 +15,31 @@
   "icon": "docs/assets/db-studio.png",
   "cover": {
     "path": "docs/assets/cover.png",
-    "alt": "DB Studio inside Orca: the customers table open in the SQL editor with its result grid, and the connections panel listing the tables on the right"
+    "alt": "DB Studio dentro de Orca: la tabla customers abierta en el editor SQL con su rejilla de resultados, y el panel de conexiones con las tablas a la derecha"
   },
   "screenshots": [
     {
       "path": "docs/assets/screenshots/editor-query-autocomplete.png",
-      "alt": "The DB Studio SQL editor suggesting column names for a query on the events table of a MariaDB connection",
-      "caption": "Autocomplete for tables and columns from the live schema",
+      "alt": "El editor SQL de DB Studio sugiriendo nombres de columna para una consulta sobre la tabla events de una conexión MariaDB",
+      "caption": "Autocompletado de tablas y columnas desde el esquema en vivo",
       "theme": "dark"
     },
     {
       "path": "docs/assets/screenshots/connection-form.png",
-      "alt": "The New connection form in the DB Studio panel, with a connection string field and the PostgreSQL, MySQL / MariaDB and SQLite engine choices",
-      "caption": "Add a connection from a connection string or field by field",
+      "alt": "El formulario de Nueva conexión en el panel de DB Studio, con un campo de cadena de conexión y las opciones de motor PostgreSQL, MySQL / MariaDB y SQLite",
+      "caption": "Añade una conexión desde una cadena de conexión o campo a campo",
       "theme": "dark"
     },
     {
       "path": "docs/assets/screenshots/editor-query-light.png",
-      "alt": "A SQL query and its result grid in DB Studio, with the connections panel beside it, in Orca's light theme",
-      "caption": "Follows Orca's active theme, light or dark",
+      "alt": "Una consulta SQL y su rejilla de resultados en DB Studio, con el panel de conexiones al lado, en el tema claro de Orca",
+      "caption": "Sigue el tema activo de Orca, claro u oscuro",
       "theme": "light"
     },
     {
       "path": "docs/assets/screenshots/editor-query-views.png",
-      "alt": "The order_totals view of a PostgreSQL connection, marked as a view in the connections panel, queried in the DB Studio SQL editor",
-      "caption": "Browse and query views, not just tables",
+      "alt": "La vista order_totals de una conexión PostgreSQL, marcada como vista en el panel de conexiones y consultada en el editor SQL de DB Studio",
+      "caption": "Explora y consulta vistas, no solo tablas",
       "theme": "light"
     }
   ],
@@ -71,21 +71,21 @@
     "commands": [
       {
         "id": "db-studio.openSqliteFile",
-        "title": "DB Studio: Open SQLite File",
+        "title": "DB Studio: Abrir fichero SQLite",
         "when": "global"
       }
     ],
     "settings": [
       {
         "key": "envVariable",
-        "title": "Connection variable",
-        "description": "Variable read from the worktree's .env to offer a per-worktree connection.",
+        "title": "Variable de conexión",
+        "description": "Variable que se lee del .env del worktree para ofrecer una conexión por worktree.",
         "type": "string",
         "default": "DATABASE_URL"
       },
       {
         "key": "queryTimeoutSeconds",
-        "title": "Query timeout (seconds)",
+        "title": "Tiempo máximo de consulta (segundos)",
         "type": "integer",
         "default": 30,
         "minimum": 1,
@@ -93,8 +93,8 @@
       },
       {
         "key": "rowLimit",
-        "title": "Row limit",
-        "description": "Rows shown for a query without its own LIMIT. Results never exceed 5000 rows or about 900 KB.",
+        "title": "Límite de filas",
+        "description": "Filas que se muestran en una consulta sin LIMIT propio. Los resultados nunca superan las 5000 filas ni unos 900 KB.",
         "type": "integer",
         "default": 100,
         "minimum": 1

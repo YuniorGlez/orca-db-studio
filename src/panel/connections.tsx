@@ -55,7 +55,7 @@ function schemaItem(ref: string, schema: SchemaNode): TreeItem {
       key: objectKey(ref, schema.name, object.name),
       label: object.name,
       icon: object.kind === 'view' ? 'file-text' : 'file',
-      ...(object.kind === 'view' ? { description: 'view' } : {}),
+      ...(object.kind === 'view' ? { description: 'vista' } : {}),
     })),
   }
 }
@@ -96,7 +96,7 @@ interface ConnectionTreeProps {
 function ConnectionTree({ entries }: ConnectionTreeProps) {
   return (
     <Tree
-      label="Connections"
+      label="Conexiones"
       items={entries.map(connectionItem)}
       expanded={read(expanded)}
       onToggle={({ key, expanded: isExpanded }) => toggle(key, isExpanded)}
@@ -116,18 +116,18 @@ function ConnectionList({ entries }: ConnectionTreeProps) {
   if (entries.length === 0) {
     return (
       <EmptyState
-        title="No connections"
-        description="Add a database server or a SQLite file. A worktree whose .env defines the connection variable shows up here by itself."
+        title="No hay conexiones"
+        description="Añade un servidor de base de datos o un fichero SQLite. Un worktree cuyo .env defina la variable de conexión aparece aquí solo."
         icon="database"
       >
-        <Button onPress={() => openNewForm()}>New connection</Button>
+        <Button onPress={() => openNewForm()}>Nueva conexión</Button>
       </EmptyState>
     )
   }
   return (
     <>
       <ConnectionTree entries={entries} />
-      <Text muted>Press Enter on a saved connection to edit or delete it.</Text>
+      <Text muted>Pulsa Enter en una conexión guardada para editarla o eliminarla.</Text>
     </>
   )
 }
@@ -137,28 +137,28 @@ export function Connections() {
   return (
     <Stack gap="sm">
       <Row justify="between" align="center">
-        <Heading level={3}>Connections</Heading>
+        <Heading level={3}>Conexiones</Heading>
         <IconButton
           icon="add"
-          label="New connection"
+          label="Nueva conexión"
           variant="ghost"
           onPress={() => openNewForm()}
         />
       </Row>
       <WorkspacePicker />
       {read(editError) ? (
-        <Callout tone="danger" title="Could not open the connection">
+        <Callout tone="danger" title="No se pudo abrir la conexión">
           {read(editError)}
         </Callout>
       ) : null}
       {read(openError) ? (
-        <Callout tone="danger" title="Could not open the table">
+        <Callout tone="danger" title="No se pudo abrir la tabla">
           {read(openError)}
         </Callout>
       ) : null}
-      {list.status === 'loading' ? <Skeleton lines={2} label="Loading connections" /> : null}
+      {list.status === 'loading' ? <Skeleton lines={2} label="Cargando conexiones" /> : null}
       {list.status === 'error' ? (
-        <Callout tone="danger" title="Could not load connections">
+        <Callout tone="danger" title="No se pudieron cargar las conexiones">
           {list.error}
         </Callout>
       ) : null}

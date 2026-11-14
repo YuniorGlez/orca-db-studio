@@ -11,11 +11,12 @@ import { foundFiles } from './state'
 
 function FoundFiles() {
   const found = read(foundFiles)
-  if (found.status === 'loading') return <Spinner label="Looking for SQLite files" />
+  if (found.status === 'loading') return <Spinner label="Buscando ficheros SQLite" />
   if (found.status === 'error') return <Text tone="danger">{found.error}</Text>
-  if (found.value.length === 0) return <Text muted>No SQLite files found in your workspaces.</Text>
+  if (found.value.length === 0)
+    return <Text muted>No se han encontrado ficheros SQLite en tus espacios de trabajo.</Text>
   return (
-    <List label="SQLite files in your workspaces">
+    <List label="Ficheros SQLite en tus espacios de trabajo">
       {found.value.map((file) => (
         <ListItem
           key={file.path}
@@ -37,7 +38,7 @@ export function SqliteFields({ draft }: SqliteFieldsProps) {
   return (
     <>
       <Input
-        label="Path"
+        label="Ruta"
         placeholder="/path/to/database.db"
         value={draft.path}
         onChange={(path) => editDraft({ path })}
@@ -46,11 +47,11 @@ export function SqliteFields({ draft }: SqliteFieldsProps) {
         <FoundFiles />
       ) : (
         <Button variant="ghost" onPress={findInWorkspaces}>
-          Find in workspaces
+          Buscar en los espacios de trabajo
         </Button>
       )}
       {draft.ref === undefined ? null : (
-        <Text muted>Deleting only forgets the file. It stays on disk.</Text>
+        <Text muted>Eliminar solo olvida el fichero. Sigue en el disco.</Text>
       )}
     </>
   )
